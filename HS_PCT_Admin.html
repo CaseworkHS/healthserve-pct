@@ -141,7 +141,7 @@
       <div id="loginError" style="display:none; color:#8C0303; font-size:12px; margin:8px 0 4px; font-weight:600;"></div>
       <button class="btn btn-primary" style="width:100%; margin-top:14px; justify-content:center;" onclick="doLogin()" id="loginBtn">Sign In</button>
     </div>
-    <div style="text-align:center; margin-top:14px; font-size:11px; color:rgba(255,255,255,0.55);">Admin access: Durga, Bobby, Sudipta, Tanin</div>
+    <div style="text-align:center; margin-top:14px; font-size:11px; color:rgba(255,255,255,0.55);"></div>
   </div>
 </div>
 
@@ -475,12 +475,37 @@ async function doLogin() {
     return;
   }
 
-  const { data: profile } = await db.from('profiles').select('*').eq('id', data.user.id).single();
-  if (!profile || profile.role !== 'admin') {
-    await db.auth.signOut();
-    errEl.textContent = 'Admin access only. Contact Durga if you need access.';
+  // Load profile — try both select methods for compatibility
+  let profile = null;
+  const { data: profileData, error: profileError } = await db
+    .from('profiles')
+    .select('*')
+    .eq('id', data.user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    errEl.textContent = 'Profile load error: ' + profileError.message;
     errEl.style.display = 'block';
     btn.textContent = 'Sign In'; btn.disabled = false;
+    await db.auth.signOut();
+    return;
+  }
+
+  profile = profileData;
+
+  if (!profile) {
+    errEl.textContent = 'No profile found for this account. Contact Durga.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Sign In'; btn.disabled = false;
+    await db.auth.signOut();
+    return;
+  }
+
+  if (profile.role !== 'admin') {
+    errEl.textContent = 'Admin access only. Your role is: ' + profile.role;
+    errEl.style.display = 'block';
+    btn.textContent = 'Sign In'; btn.disabled = false;
+    await db.auth.signOut();
     return;
   }
 
