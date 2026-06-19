@@ -1,0 +1,2709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthServe — Session Log (v27 — Supabase)</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --crimson: #8C0303;
+    --crimson-dark: #6B0202;
+    --gold: #FFCC00;
+    --cool-gray: #D7D7D7;
+    --cream: #F4E3DC;
+    --tint: #9C1D20;
+    --near-black: #231F1F;
+    --light-blue: #9CCBD4;
+    --light-green: #D2D6B7;
+    --text-gray: #7F8080;
+    --white: #FFFFFF;
+    --bg: #F7F5F3;
+    --card-bg: #FFFFFF;
+    --border: #E0D8D4;
+    --success: #2D7A4F;
+    --warning: #C17A00;
+    --danger: #8C0303;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--near-black);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  .app-header {
+    background: var(--crimson);
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .app-header .logo { display: flex; align-items: center; gap: 12px; }
+  .app-header .logo-text { font-size: 18px; font-weight: 700; }
+  .app-header .logo-sub { font-size: 11px; color: var(--gold); font-weight: 500; letter-spacing: 0.5px; }
+  .app-header .doc-type { font-size: 12px; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 4px; }
+
+  /* ── Progress bar ── */
+  .progress-bar {
+    background: var(--crimson-dark);
+    padding: 8px 20px;
+    display: flex;
+    gap: 0;
+  }
+  .progress-step {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .progress-step.active {
+    background: var(--gold);
+    color: var(--near-black);
+    font-weight: 600;
+  }
+  .progress-step.done {
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* ── Main container ── */
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  /* ── Screen ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-header {
+    background: var(--crimson);
+    color: white;
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-header.tint { background: var(--tint); }
+  .card-header.blue { background: var(--light-blue); color: var(--near-black); }
+  .card-header.green { background: var(--light-green); color: var(--near-black); }
+  .card-header.gold { background: var(--gold); color: var(--near-black); }
+  .card-body { padding: 16px; }
+
+  /* ── Form grid ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  @media (max-width: 520px) {
+    .form-grid, .form-grid.three { grid-template-columns: 1fr; }
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.span2 { grid-column: span 2; }
+  .form-group.span3 { grid-column: span 3; }
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--crimson);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  input, select, textarea {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--near-black);
+    background: white;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--crimson);
+    box-shadow: 0 0 0 2px rgba(140,3,3,0.1);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  input[readonly], select[disabled] {
+    background: #F9F6F4;
+    color: var(--text-gray);
+  }
+
+  /* ── Client strip ── */
+  .client-strip {
+    background: var(--cream);
+    border: 1px solid #E8D5CC;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .client-strip-item { display: flex; flex-direction: column; gap: 2px; }
+  .client-strip-item .cs-label { font-size: 10px; font-weight: 600; color: var(--tint); text-transform: uppercase; }
+  .client-strip-item .cs-value { font-size: 13px; font-weight: 600; color: var(--near-black); }
+  @media (max-width: 520px) { .client-strip { grid-template-columns: 1fr 1fr; } }
+
+  /* ── SUD Slider ── */
+  .sud-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 4px 0;
+  }
+  .sud-item { display: flex; flex-direction: column; gap: 6px; }
+  .sud-label { font-size: 11px; font-weight: 600; color: var(--crimson); text-transform: uppercase; }
+  .sud-display {
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--cream);
+    color: var(--crimson);
+    border: 2px solid var(--border);
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--cool-gray);
+    border: none;
+    padding: 0;
+    box-shadow: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--crimson);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .sud-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-gray);
+    margin-top: -2px;
+  }
+
+  /* ── Risk pills ── */
+  .pill-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .pill:hover { opacity: 0.85; }
+  .pill.risk-low { background: #E8F5EE; color: #1A6B3C; border-color: #B8DFC9; }
+  .pill.risk-low.selected { background: #2D7A4F; color: white; border-color: #2D7A4F; }
+  .pill.risk-lowmed { background: #EEF5E8; color: #4A6B1A; border-color: #C9DFB8; }
+  .pill.risk-lowmed.selected { background: #5A7A2D; color: white; border-color: #5A7A2D; }
+  .pill.risk-med { background: #FFF8E1; color: #8B6000; border-color: #FFE082; }
+  .pill.risk-med.selected { background: #F9A825; color: white; border-color: #F9A825; }
+  .pill.risk-medhigh { background: #FFF3E0; color: #8B3A00; border-color: #FFCC80; }
+  .pill.risk-medhigh.selected { background: #E65100; color: white; border-color: #E65100; }
+  .pill.risk-high { background: #FFEBEE; color: #7B0000; border-color: #FFCDD2; }
+  .pill.risk-high.selected { background: #C62828; color: white; border-color: #C62828; }
+  .pill.outcome { background: #F5F5F5; color: #444; border-color: #DDD; }
+  .pill.outcome.selected { background: var(--tint); color: white; border-color: var(--tint); }
+  .pill.mode { background: #F0F4FF; color: #1A3A8B; border-color: #C5D0F0; }
+  .pill.mode.selected { background: #1A3A8B; color: white; border-color: #1A3A8B; }
+  .pill.stage { background: #F5F0FF; color: #4A1A8B; border-color: #D0C5F0; }
+  .pill.stage.selected { background: var(--crimson); color: white; border-color: var(--crimson); }
+
+  /* ── Red flag ── */
+  .flag-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #FFF5F5;
+    border: 2px solid #FFCDD2;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .flag-box.flagged {
+    background: #FFEBEE;
+    border-color: var(--crimson);
+  }
+  .flag-box input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; }
+  .flag-box-text { font-size: 13px; font-weight: 600; color: var(--crimson); }
+  .flag-box-sub { font-size: 11px; color: var(--text-gray); }
+
+  /* ── CS section ── */
+  .cs-section { display: none; }
+  .cs-section.visible { display: block; }
+  .cs-note {
+    font-size: 11px;
+    color: var(--text-gray);
+    font-style: italic;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #F9F6F4;
+    border-left: 3px solid var(--cool-gray);
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* ── Risk reference ── */
+  .risk-ref {
+    font-size: 11px;
+    color: var(--text-gray);
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: #F9F6F4;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .risk-ref strong { color: var(--near-black); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--crimson); color: white; }
+  .btn-primary:hover { background: var(--crimson-dark); }
+  .btn-secondary { background: var(--cool-gray); color: var(--near-black); }
+  .btn-secondary:hover { background: #C0B8B4; }
+  .btn-gold { background: var(--gold); color: var(--near-black); }
+  .btn-gold:hover { background: #E6B800; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #1F5C3A; }
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Output screen ── */
+  .output-block {
+    background: #FAFAFA;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    color: var(--near-black);
+  }
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    background: var(--tint);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .copy-btn:hover { background: var(--crimson); }
+  .copy-btn.copied { background: var(--success); }
+
+  /* ── Alert ── */
+  .alert {
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .alert-info { background: #E3F2FD; border-left: 3px solid #1976D2; color: #0D47A1; }
+  .alert-warning { background: #FFF8E1; border-left: 3px solid #F9A825; color: #6B4C00; }
+  .alert-danger { background: #FFEBEE; border-left: 3px solid var(--crimson); color: #7B0000; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ── Session count badge ── */
+  .sess-badge {
+    display: inline-block;
+    background: var(--crimson);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+  }
+
+  /* ── Intake-only section ── */
+  .intake-only { display: none; }
+  .intake-only.visible { display: block; }
+
+  /* ── Hint text ── */
+  .hint { font-size: 10px; color: var(--text-gray); margin-top: 2px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #F0EDE9; }
+  ::-webkit-scrollbar-thumb { background: var(--cool-gray); border-radius: 3px; }
+
+  /* ── PHQ-4 widget ── */
+  .phq4-block {
+    background: #F8F4FF;
+    border: 1px solid #C8B8E8;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 4px;
+  }
+  .phq4-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--near-black);
+    margin-bottom: 4px;
+  }
+  .phq4-note {
+    font-size: 11px;
+    color: var(--text-gray);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .phq4-questions { display: flex; flex-direction: column; gap: 12px; }
+  .phq4-q { display: flex; flex-direction: column; gap: 6px; }
+  .phq4-q-text { font-size: 13px; font-weight: 500; color: var(--near-black); }
+  .phq4-options { display: flex; gap: 8px; }
+  .phq4-opt {
+    width: 44px;
+    height: 36px;
+    border: 2px solid #C8B8E8;
+    background: white;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #5A4080;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .phq4-opt:hover { background: #EDE8F8; }
+  .phq4-opt.selected { background: #7B4FBB; border-color: #7B4FBB; color: white; }
+  .phq4-result {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  .phq4-result.normal { background: #D4EDDA; color: #1A5C2A; border: 1px solid #A8D5B5; }
+  .phq4-result.mild { background: #FFF3CD; color: #7A5800; border: 1px solid #FFD966; }
+  .phq4-result.moderate { background: #FFE0B2; color: #7A3800; border: 1px solid #FFB74D; }
+  .phq4-result.severe { background: #FFCDD2; color: #8C0303; border: 1px solid #EF9A9A; }
+
+  /* ── PHQ-4 language tabs ── */
+  .phq4-lang-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .phq4-lang-tab {
+    padding: 4px 12px;
+    border: 1.5px solid #C8B8E8;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #5A4080;
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .phq4-lang-tab:hover { background: #EDE8F8; }
+  .phq4-lang-tab.active { background: #7B4FBB; border-color: #7B4FBB; color: white; }
+  .phq4-attribution {
+    font-size: 10px;
+    color: var(--text-gray);
+    margin-top: 12px;
+    line-height: 1.5;
+    border-top: 1px solid #E0D8F8;
+    padding-top: 8px;
+  }
+  .phq4-attribution strong { color: var(--near-black); }
+
+  /* ── Print / Save as PDF ── */
+  @media print {
+    .app-header, .progress-bar, #screen1, #screen2, #screen3,
+    .btn-row, .copy-btn, .alert-warning, .alert-info,
+    #flagAlert { display: none !important; }
+    #screen4 { display: block !important; }
+    .screen { padding: 0 !important; }
+    .card { box-shadow: none !important; border: 1px solid #ccc !important; margin-bottom: 12px !important; }
+    .output-block { font-size: 12px !important; }
+    body { background: white !important; font-size: 12px; }
+    .container { max-width: 100% !important; padding: 0 !important; }
+  }
+
+  /* ── Previous sessions panel ── */
+  .prev-session-item {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 0;
+    font-size: 12px;
+  }
+  .prev-session-item:last-child { border-bottom: none; }
+  .prev-session-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .prev-session-badge {
+    background: var(--cool-gray);
+    color: var(--near-black);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .prev-session-soap {
+    color: var(--text-gray);
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  /* ── ASQ Suicide Screen ── */
+  .asq-block {
+    background: #FFF8F8;
+    border: 1px solid #F5C6CB;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .asq-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8C0303;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .asq-note {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 12px;
+  }
+  .asq-q { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .asq-q-text { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+  .asq-opts { display: flex; gap: 8px; }
+  .asq-opt {
+    padding: 5px 16px;
+    border-radius: 20px;
+    border: 1.5px solid #ccc;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    color: #444;
+    transition: all 0.15s;
+  }
+  .asq-opt:hover { background: #FFF0F0; border-color: #E57373; }
+  .asq-opt.selected-yes { background: #C62828; border-color: #C62828; color: white; }
+  .asq-opt.selected-no { background: #2E7D32; border-color: #2E7D32; color: white; }
+  .asq-result {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: none;
+  }
+  .asq-result.clear { background: #D4EDDA; color: #1A5C2A; border: 1px solid #A8D5B5; }
+  .asq-result.concern { background: #FFCDD2; color: #8C0303; border: 1px solid #EF9A9A; }
+
+  /* ── CPR Assessment ── */
+  .cpr-block {
+    background: #FFF3E0;
+    border: 1.5px solid #FFB74D;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .cpr-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #7A3800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .cpr-note { font-size: 11px; color: #666; margin-bottom: 12px; }
+
+  /* ── Safety Plan ── */
+  .safety-plan-block {
+    background: #E8F5E9;
+    border: 1.5px solid #66BB6A;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .safety-plan-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1B5E20;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .safety-plan-note { font-size: 11px; color: #2E7D32; margin-bottom: 12px; }
+  .mindline-box {
+    background: #1B5E20;
+    color: white;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* ── Other Risk Assessment ── */
+  .other-risk-block {
+    background: #F3F4F6;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 14px;
+  }
+  .other-risk-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ────────────────────────────────────────────────────────── -->
+<div id="loginScreen" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--crimson); z-index:9999; align-items:center; justify-content:center;">
+  <div style="width:100%; max-width:380px; padding:24px 20px;">
+    <div style="text-align:center; margin-bottom:28px;">
+      <div style="font-size:26px; font-weight:700; color:white; letter-spacing:-0.5px;">HealthServe</div>
+      <div style="font-size:11px; color:var(--gold); letter-spacing:1.5px; font-weight:600; margin-top:2px;">PSYCHOTHERAPY & COUNSELLING TEAM</div>
+    </div>
+    <div style="background:white; border-radius:12px; padding:24px 20px; box-shadow:0 12px 40px rgba(0,0,0,0.3);">
+      <div style="font-size:15px; font-weight:700; color:var(--near-black); margin-bottom:16px;">Sign in to Session Log</div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="your.name@healthserve.org.sg" autocomplete="email">
+      </div>
+      <div class="form-group" style="margin-bottom:4px;">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div id="loginError" style="display:none; color:var(--crimson); font-size:12px; margin:8px 0 4px; font-weight:600;"></div>
+      <button class="btn btn-primary" style="width:100%; margin-top:14px; justify-content:center;" onclick="doLogin()" id="loginBtn">Sign In</button>
+    </div>
+    <div style="text-align:center; margin-top:14px; font-size:11px; color:rgba(255,255,255,0.55);">Contact Durga to set up or reset your account</div>
+  </div>
+</div>
+
+<div class="app-header">
+  <div class="logo">
+    <div>
+      <div class="logo-text">HealthServe</div>
+      <div class="logo-sub">PSYCHOTHERAPY & COUNSELLING TEAM</div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <div class="doc-type">Session Log Form</div>
+    <div id="userBadge" style="display:none; font-size:11px; color:var(--gold); font-weight:600;"></div>
+    <button id="logoutBtn" style="display:none; font-size:11px; background:rgba(255,255,255,0.15); color:white; border:none; border-radius:4px; padding:4px 10px; cursor:pointer;" onclick="doLogout()">Sign out</button>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-step active" id="step1-tab" onclick="goToScreen(1)">1 — Session Details</div>
+  <div class="progress-step" id="step2-tab" onclick="goToScreen(2)">2 — Clinical Notes</div>
+  <div class="progress-step" id="step3-tab" onclick="goToScreen(3)">3 — Case Summary</div>
+  <div class="progress-step" id="step4-tab" onclick="goToScreen(4)">4 — Output</div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN 1 — SESSION DETAILS -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="screen active" id="screen1">
+
+  <div class="card">
+    <div class="card-header">Step 1 — Counsellor &amp; Session</div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Your Name</label>
+          <select id="counsellorSelect" onchange="filterClients()">
+            <option value="">— Select counsellor —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Session Type</label>
+          <div class="pill-group" id="sessionTypePills">
+            <div class="pill stage selected" data-val="Individual" onclick="selectPill(this,'sessionTypePills','sessionType');filterClients()">Individual</div>
+            <div class="pill stage" data-val="Group" onclick="selectPill(this,'sessionTypePills','sessionType');filterClients()">Group</div>
+          </div>
+          <input type="hidden" id="sessionType" value="Individual">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" id="step2Header">Step 2 — Select Client</div>
+    <div class="card-body">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Client</label>
+        <select id="clientSelect" onchange="onClientSelect()">
+          <option value="">— Select counsellor first —</option>
+        </select>
+        <div class="hint">Only showing your active cases. Contact Bobby to add new cases.</div>
+      </div>
+
+      <div id="clientStrip" class="client-strip" style="display:none;">
+        <div class="client-strip-item">
+          <span class="cs-label">Case ID</span>
+          <span class="cs-value" id="strip-caseId">—</span>
+        </div>
+        <div class="client-strip-item">
+          <span class="cs-label">Sessions to date</span>
+          <span class="cs-value" id="strip-sessions">—</span>
+        </div>
+        <div class="client-strip-item">
+          <span class="cs-label">Last Distress End</span>
+          <span class="cs-value" id="strip-lastSUD">—</span>
+        </div>
+        <div class="client-strip-item">
+          <span class="cs-label">Last Session</span>
+          <span class="cs-value" id="strip-lastDate">—</span>
+        </div>
+        <div class="client-strip-item">
+          <span class="cs-label">Risk Level</span>
+          <span class="cs-value" id="strip-risk">—</span>
+        </div>
+        <div class="client-strip-item">
+          <span class="cs-label">Primary Issue</span>
+          <span class="cs-value" id="strip-issue">—</span>
+        </div>
+      </div>
+      <div id="groupMembersStrip" style="display:none; margin-top:10px; padding:10px 12px; background:#FFF8E7; border-radius:6px; border-left:3px solid #C8960C;">
+        <div style="font-size:11px; font-weight:700; color:#7A5C00; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">Group Members</div>
+        <div id="groupMembersList" style="font-size:13px; color:#231F1F; white-space:pre-line; line-height:1.7;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Step 3 — Session Details</div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Session Date</label>
+          <input type="date" id="sessionDate">
+        </div>
+        <div class="form-group">
+          <label>Session No. (auto)</label>
+          <input type="number" id="sessionNo" min="1" value="1" readonly>
+        </div>
+        <div class="form-group">
+          <label>Start Time</label>
+          <input type="text" id="sessionTime" placeholder="e.g. 14:30" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" inputmode="numeric" style="width:120px;">
+        </div>
+        <div class="form-group">
+          <label>Duration (minutes)</label>
+          <input type="number" id="duration" placeholder="e.g. 60" min="5" max="240">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Mode</label>
+        <div class="pill-group" id="modePills">
+          <div class="pill mode selected" data-val="F2F – HS" onclick="selectPill(this,'modePills','sessionMode')">F2F – HS</div>
+          <div class="pill mode" data-val="F2F – Dorm" onclick="selectPill(this,'modePills','sessionMode')">F2F – Dorm</div>
+          <div class="pill mode" data-val="F2F – Hospital" onclick="selectPill(this,'modePills','sessionMode')">F2F – Hospital</div>
+          <div class="pill mode" data-val="WA-Audio Call" onclick="selectPill(this,'modePills','sessionMode')">WA-Audio</div>
+          <div class="pill mode" data-val="WA-Video Call" onclick="selectPill(this,'modePills','sessionMode')">WA-Video</div>
+          <div class="pill mode" data-val="Phone Call" onclick="selectPill(this,'modePills','sessionMode')">Phone</div>
+          <div class="pill mode" data-val="Online" onclick="selectPill(this,'modePills','sessionMode')">Online</div>
+        </div>
+        <input type="hidden" id="sessionMode" value="F2F – HS">
+      </div>
+      <div class="form-group">
+        <label>Session Stage</label>
+        <div class="pill-group" id="stagePills">
+          <div class="pill stage" data-val="Intake" onclick="selectPill(this,'stagePills','sessionStage');toggleIntake()">Intake</div>
+          <div class="pill stage selected" data-val="Progress" onclick="selectPill(this,'stagePills','sessionStage');toggleIntake()">Progress</div>
+          <div class="pill stage" data-val="Closure" onclick="selectPill(this,'stagePills','sessionStage');toggleIntake()">Closure</div>
+        </div>
+        <input type="hidden" id="sessionStage" value="Progress">
+      </div>
+      <div class="divider"></div>
+      <div class="form-group">
+        <label>Consent Obtained</label>
+        <div class="pill-group" id="consentPills">
+          <div class="pill outcome selected" data-val="Verbal" onclick="selectPill(this,'consentPills','consentObtained')">Verbal</div>
+          <div class="pill outcome" data-val="Written" onclick="selectPill(this,'consentPills','consentObtained')">Written</div>
+          <div class="pill outcome" data-val="Not obtained" onclick="selectPill(this,'consentPills','consentObtained')">Not obtained</div>
+        </div>
+        <input type="hidden" id="consentObtained" value="Verbal">
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="validateScreen1()">Next: Clinical Notes →</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN 2 — CLINICAL NOTES -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen2">
+
+  <div id="clientStripScreen2" class="client-strip" style="display:none; margin-bottom:16px;">
+    <div class="client-strip-item">
+      <span class="cs-label">Client</span>
+      <span class="cs-value" id="strip2-name">—</span>
+    </div>
+    <div class="client-strip-item">
+      <span class="cs-label">Session No.</span>
+      <span class="cs-value" id="strip2-sessNo">—</span>
+    </div>
+    <div class="client-strip-item">
+      <span class="cs-label">Last Distress End</span>
+      <span class="cs-value" id="strip2-lastSUD">—</span>
+    </div>
+  </div>
+
+  <!-- Previous sessions panel -->
+  <div id="prevSessionsPanel" style="display:none; margin-bottom:16px;">
+    <div class="card" style="border-left:4px solid var(--crimson);">
+      <div class="card-header" style="cursor:pointer; user-select:none; display:flex; justify-content:space-between; align-items:center;" onclick="togglePrevSessions()">
+        <span>Previous Sessions — <span id="prevSessionsClientName"></span></span>
+        <span id="prevSessionsToggleIcon" style="font-size:16px;">+</span>
+      </div>
+      <div id="prevSessionsBody" style="display:none;">
+        <div class="card-body" id="prevSessionsContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUD -->
+  <div class="card">
+    <div class="card-header">Distress Level (SUD 0–10)</div>
+    <div class="card-body">
+      <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;"><strong>SUD — new from May 2026.</strong> Ask the client: “On a scale of 0 to 10, how distressed do you feel right now? 0 means no distress at all, 10 means the worst imaginable.” Record their answer here.</div>
+      <div class="sud-container">
+        <div class="sud-item">
+          <div class="sud-label">Start of Session</div>
+          <div class="sud-display" id="sudStartDisplay">5</div>
+          <input type="range" id="sudStart" min="0" max="10" value="5" oninput="updateSUD('sudStart','sudStartDisplay')">
+          <div class="sud-scale"><span>0 — None</span><span>5 — Moderate</span><span>10 — Extreme</span></div>
+        </div>
+        <div class="sud-item">
+          <div class="sud-label">End of Session</div>
+          <div class="sud-display" id="sudEndDisplay">5</div>
+          <input type="range" id="sudEnd" min="0" max="10" value="5" oninput="updateSUD('sudEnd','sudEndDisplay')">
+          <div class="sud-scale"><span>0 — None</span><span>5 — Moderate</span><span>10 — Extreme</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intake-only: 5Ps -->
+  <div class="intake-only" id="intakeSection">
+    <div class="card">
+      <div class="card-header tint">Intake — 5Ps Formulation (Session 1 only)</div>
+      <div class="card-body">
+        <div class="alert alert-info">Complete this section for the first session only. Leave blank for progress sessions.</div>
+        <div class="form-grid full" style="gap:12px;">
+          <div class="form-group">
+            <label>Presenting Concern</label>
+            <textarea id="presenting" placeholder="Why was the client referred? What did they present with?"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Predisposing Factors</label>
+            <textarea id="predisposing" placeholder="Background vulnerabilities — history, personality, prior trauma"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Precipitating Factors</label>
+            <textarea id="precipitating" placeholder="What triggered the current episode?"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Perpetuating Factors</label>
+            <textarea id="perpetuating" placeholder="What is maintaining the problem?"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Protective Factors</label>
+            <textarea id="protective" placeholder="Strengths, supports, resources available to the client"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Treatment Goal &amp; Planned Sessions</label>
+            <textarea id="treatmentGoal" rows="2" placeholder="e.g. Reduce anxiety and build coping strategies. Planned: 8 sessions at fortnightly intervals."></textarea>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="phq4-block" id="phq4IntakeBlock">
+          <div class="phq4-title">PHQ-4 — Psychological Distress Screening (Intake)</div>
+          <div class="phq4-note">Rate each item for the <strong>past 2 weeks</strong>. Ask the client in their language and record their answer. 0 = Not at all &nbsp; 1 = Several days &nbsp; 2 = More than half the days &nbsp; 3 = Nearly every day.</div>
+          <div class="phq4-lang-tabs" id="phq4IntakeLangTabs">
+            <button type="button" class="phq4-lang-tab active" onclick="setPHQ4Lang('intake','en',this)">English</button>
+            <button type="button" class="phq4-lang-tab" onclick="setPHQ4Lang('intake','ta',this)">Tamil தமிழ்</button>
+            <button type="button" class="phq4-lang-tab" onclick="setPHQ4Lang('intake','bn',this)">Bengali বাংলা</button>
+            <button type="button" class="phq4-lang-tab" onclick="setPHQ4Lang('intake','zh',this)">中文 Chinese</button>
+          </div>
+          <div class="phq4-questions">
+            <div class="phq4-q">
+              <div class="phq4-q-text" id="phq4_intake_q1_text">1. Feeling nervous, anxious, or on edge</div>
+              <div class="phq4-options" id="phq4_q1_opts">
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4_q1_opts','phq4_q1','intake')">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4_q1_opts','phq4_q1','intake')">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4_q1_opts','phq4_q1','intake')">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4_q1_opts','phq4_q1','intake')">3</button>
+              </div>
+              <input type="hidden" id="phq4_q1" value="">
+            </div>
+            <div class="phq4-q">
+              <div class="phq4-q-text" id="phq4_intake_q2_text">2. Not being able to stop or control worrying</div>
+              <div class="phq4-options" id="phq4_q2_opts">
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4_q2_opts','phq4_q2','intake')">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4_q2_opts','phq4_q2','intake')">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4_q2_opts','phq4_q2','intake')">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4_q2_opts','phq4_q2','intake')">3</button>
+              </div>
+              <input type="hidden" id="phq4_q2" value="">
+            </div>
+            <div class="phq4-q">
+              <div class="phq4-q-text" id="phq4_intake_q3_text">3. Feeling down, depressed, or hopeless</div>
+              <div class="phq4-options" id="phq4_q3_opts">
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4_q3_opts','phq4_q3','intake')">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4_q3_opts','phq4_q3','intake')">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4_q3_opts','phq4_q3','intake')">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4_q3_opts','phq4_q3','intake')">3</button>
+              </div>
+              <input type="hidden" id="phq4_q3" value="">
+            </div>
+            <div class="phq4-q">
+              <div class="phq4-q-text" id="phq4_intake_q4_text">4. Little interest or pleasure in doing things</div>
+              <div class="phq4-options" id="phq4_q4_opts">
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4_q4_opts','phq4_q4','intake')">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4_q4_opts','phq4_q4','intake')">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4_q4_opts','phq4_q4','intake')">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4_q4_opts','phq4_q4','intake')">3</button>
+              </div>
+              <input type="hidden" id="phq4_q4" value="">
+            </div>
+          </div>
+          <div class="phq4-result" id="phq4IntakeResult" style="display:none;"></div>
+          <div class="phq4-attribution">
+            <strong>PHQ-4</strong> © Developed by Drs. Robert L. Spitzer, Janet B.W. Williams, Kurt Kroenke and colleagues, with an educational grant from Pfizer Inc. No permission required to reproduce or distribute. © Template adapted for HealthServe Psychotherapy & Counselling Team use only.
+          </div>
+        </div>
+
+         </div>
+    </div>
+  </div>
+  <!-- Suicide Risk Assessment (shown for all session stages) -->
+  <div class="card">
+    <div class="card-header tint">Suicide Risk Assessment</div>
+    <div class="card-body">
+      <!-- Suicide Risk Assessment Gate -->
+      <div style="margin-top:14px; padding:12px 14px; background:#FFF8F8; border:1px solid #F5C6CB; border-radius:8px;">
+        <div style="font-size:13px; font-weight:700; color:#8C0303; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Suicide Risk Assessment Required?</div>
+        <div style="font-size:11px; color:#666; margin-bottom:10px;">Select Yes only if the client has expressed suicidal ideation, self-harm, or if clinical judgement indicates a risk screen is needed.</div>
+        <div class="pill-group" id="suicideGatePills">
+          <div class="pill outcome selected" data-val="No" id="suicideGateNo" onclick="selectPill(this,'suicideGatePills','suicideGateVal');toggleSuicideGate()">Not required</div>
+          <div class="pill outcome" data-val="Yes" id="suicideGateYes" onclick="selectPill(this,'suicideGatePills','suicideGateVal');toggleSuicideGate()">Yes — conduct assessment</div>
+        </div>
+          <input type="hidden" id="suicideGateVal" value="No">
+      </div>
+
+      <!-- ASQ Suicide Screening -->
+      <div class="asq-block" id="asqBlock" style="display:none;">
+        <div class="asq-title">ASQ — Suicide Risk Screening</div>
+        <div class="asq-note">Ask each question directly. Record the client's answer. If any answer is Yes, the CPR assessment below will appear automatically.</div>
+        <div class="asq-q">
+          <div class="asq-q-text">1. In your lifetime, have you ever had thoughts of killing yourself?</div>
+          <div class="asq-opts">
+              <button type="button" class="asq-opt" data-q="asq1" data-val="No" onclick="selectASQ(this)">No</button>
+              <button type="button" class="asq-opt" data-q="asq1" data-val="Yes" onclick="selectASQ(this)">Yes</button>
+          </div>
+            <input type="hidden" id="asq1" value="">
+        </div>
+        <div class="asq-q">
+          <div class="asq-q-text">2. Have you had these thoughts in the past few weeks?</div>
+          <div class="asq-opts">
+              <button type="button" class="asq-opt" data-q="asq2" data-val="No" onclick="selectASQ(this)">No</button>
+              <button type="button" class="asq-opt" data-q="asq2" data-val="Yes" onclick="selectASQ(this)">Yes</button>
+          </div>
+            <input type="hidden" id="asq2" value="">
+        </div>
+        <div class="asq-q">
+          <div class="asq-q-text">3. Have you ever tried to kill yourself?</div>
+          <div class="asq-opts">
+              <button type="button" class="asq-opt" data-q="asq3" data-val="No" onclick="selectASQ(this)">No</button>
+              <button type="button" class="asq-opt" data-q="asq3" data-val="Yes" onclick="selectASQ(this)">Yes</button>
+          </div>
+            <input type="hidden" id="asq3" value="">
+        </div>
+        <div class="asq-q">
+          <div class="asq-q-text" style="color:#C62828; font-weight:700;">4. Are you having thoughts of killing yourself right now?</div>
+          <div class="asq-opts">
+              <button type="button" class="asq-opt" data-q="asq4" data-val="No" onclick="selectASQ(this)">No</button>
+              <button type="button" class="asq-opt" data-q="asq4" data-val="Yes" onclick="selectASQ(this)">Yes</button>
+          </div>
+            <input type="hidden" id="asq4" value="">
+        </div>
+        <div class="asq-result" id="asqResult"></div>
+      </div>
+
+      <!-- CPR Assessment (shown when any ASQ = Yes) -->
+      <div class="cpr-block" id="cprBlock" style="display:none;">
+        <div class="cpr-title">CPR — Suicide Risk Assessment</div>
+        <div class="cpr-note">Complete all three sections. This will appear in the session record.</div>
+        <div class="form-group">
+            <label>C — Current Suicidal Plan</label>
+          <div class="pill-group" id="cprCurrentPlanPills">
+            <div class="pill outcome selected" data-val="No specific plan" onclick="selectPill(this,'cprCurrentPlanPills','cprCurrentPlan');showCPRPlanDetail(false)">No specific plan</div>
+            <div class="pill outcome" data-val="Vague ideation only" onclick="selectPill(this,'cprCurrentPlanPills','cprCurrentPlan');showCPRPlanDetail(false)">Vague ideation only</div>
+            <div class="pill outcome" data-val="Has a plan" onclick="selectPill(this,'cprCurrentPlanPills','cprCurrentPlan');showCPRPlanDetail(true)">Has a plan</div>
+          </div>
+            <input type="hidden" id="cprCurrentPlan" value="No specific plan">
+        </div>
+        <div id="cprPlanDetailArea" style="display:none; margin-top:8px;">
+            <textarea id="cprPlanDetail" rows="2" placeholder="Describe the plan (method, time, place if known). This is confidential clinical documentation."></textarea>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+            <label>P — Past Attempts</label>
+          <div class="pill-group" id="cprPastAttemptsPills">
+            <div class="pill outcome selected" data-val="None" onclick="selectPill(this,'cprPastAttemptsPills','cprPastAttempts');showCPRPastDetail(false)">None</div>
+            <div class="pill outcome" data-val="Yes — past attempt(s)" onclick="selectPill(this,'cprPastAttemptsPills','cprPastAttempts');showCPRPastDetail(true)">Yes — past attempt(s)</div>
+          </div>
+            <input type="hidden" id="cprPastAttempts" value="None">
+        </div>
+        <div id="cprPastDetailArea" style="display:none; margin-top:8px;">
+            <textarea id="cprPastDetail" rows="2" placeholder="When, method used, outcome (e.g. hospitalised, self-resolved). Brief notes only."></textarea>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+            <label>R — Protective Resources (what is keeping the client safe)</label>
+            <textarea id="cprResources" rows="2" placeholder="e.g. Family support, fear of pain, religious beliefs, future plans, children, employment. Note what the client said."></textarea>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+            <label>Overall CPR Risk Judgement</label>
+          <div class="pill-group" id="cprRiskJudgementPills">
+            <div class="pill outcome selected" data-val="Low" onclick="selectPill(this,'cprRiskJudgementPills','cprRiskJudgement')">Low</div>
+            <div class="pill outcome" data-val="Medium" onclick="selectPill(this,'cprRiskJudgementPills','cprRiskJudgement')">Medium</div>
+            <div class="pill outcome" data-val="High" onclick="selectPill(this,'cprRiskJudgementPills','cprRiskJudgement');triggerHighRiskFlag()">High</div>
+            <div class="pill outcome" data-val="Imminent" onclick="selectPill(this,'cprRiskJudgementPills','cprRiskJudgement');triggerHighRiskFlag()">Imminent — activate safety plan</div>
+          </div>
+            <input type="hidden" id="cprRiskJudgement" value="Low">
+        </div>
+      </div>
+
+      <!-- Safety Plan (shown when CPR risk is High or Imminent) -->
+      <div class="safety-plan-block" id="safetyPlanBlock" style="display:none;">
+        <div class="safety-plan-title">🛡 Safety Plan</div>
+        <div class="safety-plan-note">Complete this with the client. This will appear in the session record and trigger a Red Flag notification to the supervisor.</div>
+        <div class="form-group">
+            <label>Warning signs the client will watch for</label>
+            <textarea id="spWarningSigns" rows="2" placeholder="e.g. Feeling isolated, not sleeping, intrusive thoughts, withdrawing from others."></textarea>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+            <label>Coping strategies agreed with client</label>
+            <textarea id="spCopingStrategies" rows="2" placeholder="e.g. Call a friend, go for a walk, use breathing exercises, remove access to means."></textarea>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+            <label>Safe person to contact (name &amp; number)</label>
+            <input type="text" id="spSafePerson" placeholder="e.g. Brother — Rajan — +65 9123 4567">
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+            <label>Counsellor action taken this session</label>
+            <textarea id="spCounsellorAction" rows="2" placeholder="e.g. Safety plan discussed and agreed. Supervisor notified. Follow-up scheduled for 14 May 2026."></textarea>
+        </div>
+        <div class="mindline-box">
+            📞 HealthServe 24-hr Crisis Helpline: +65 3129 5000 — Shared with client
+        </div>
+      </div>
+    </div>
+      <!-- Other Risk Assessment -->
+      <div class="other-risk-block" style="margin-top:14px;">
+        <div class="other-risk-title">Other Risk Assessment Used (optional)</div>
+        <div class="form-group" style="margin-bottom:0;">
+          <textarea id="otherRiskAssessment" rows="2" placeholder="e.g. DASS-21 — Score: 18 (Moderate Depression). BDI-II — Score: 22 (Moderate). Hospital risk tool — Low risk, no further action."></textarea>
+        </div>
+      </div>
+  </div>
+  <!-- SOAP -->
+  <div class="card">
+    <div class="card-header">SOAP Clinical Notes</div>
+    <div class="card-body">
+      <div class="form-grid full" style="gap:12px;">
+        <div class="form-group">
+          <label>S — Subjective</label>
+          <textarea id="soapS" rows="4" placeholder="What did the client report? Key themes, mood in their own words. Significant statements."></textarea>
+        </div>
+        <div class="form-group">
+          <label>O — Objective</label>
+          <textarea id="soapO" rows="3" placeholder="Your clinical observations — affect, engagement, coherence, risk indicators observed."></textarea>
+        </div>
+        <div class="form-group">
+          <label>A — Assessment</label>
+          <textarea id="soapA" rows="3" placeholder="Clinical formulation. Stage of change. Any change in risk from last session?"></textarea>
+        </div>
+        <div class="form-group">
+          <label>P — Plan</label>
+          <textarea id="soapP" rows="3" placeholder="What was agreed. Approach used. Next session focus. Any referrals or actions."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk & Outcome -->
+  <div class="card">
+    <div class="card-header">Risk Level &amp; Session Outcome</div>
+    <div class="card-body">
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Risk Level</label>
+        <div class="pill-group" id="riskPills">
+          <div class="pill risk-low" data-val="LOW" onclick="selectPill(this,'riskPills','riskLevel');updateRiskRef()">LOW</div>
+          <div class="pill risk-lowmed" data-val="LOW-MED" onclick="selectPill(this,'riskPills','riskLevel');updateRiskRef()">LOW-MED</div>
+          <div class="pill risk-med selected" data-val="MEDIUM" onclick="selectPill(this,'riskPills','riskLevel');updateRiskRef()">MEDIUM</div>
+          <div class="pill risk-medhigh" data-val="MED-HIGH" onclick="selectPill(this,'riskPills','riskLevel');updateRiskRef()">MED-HIGH</div>
+          <div class="pill risk-high" data-val="HIGH" onclick="selectPill(this,'riskPills','riskLevel');updateRiskRef()">HIGH</div>
+        </div>
+        <input type="hidden" id="riskLevel" value="MEDIUM">
+        <div class="risk-ref" id="riskRef">MEDIUM — <strong>Client is managing but requires continued support — no immediate safety concern.</strong></div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Session Outcome</label>
+        <div class="pill-group" id="outcomePills">
+          <div class="pill outcome selected" data-val="Completed" onclick="selectPill(this,'outcomePills','sessionOutcome')">Completed</div>
+          <div class="pill outcome" data-val="Incomplete" onclick="selectPill(this,'outcomePills','sessionOutcome')">Incomplete</div>
+          <div class="pill outcome" data-val="Unresponsive" onclick="selectPill(this,'outcomePills','sessionOutcome')">Unresponsive</div>
+          <div class="pill outcome" data-val="Referred Out" onclick="selectPill(this,'outcomePills','sessionOutcome')">Referred Out</div>
+          <div class="pill outcome" data-val="Rescheduled" onclick="selectPill(this,'outcomePills','sessionOutcome')">Rescheduled</div>
+        </div>
+        <input type="hidden" id="sessionOutcome" value="Completed">
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer; font-size:13px; color:var(--text-gray);">
+          <input type="checkbox" id="noFollowUp" onchange="toggleNoFollowUp()" style="width:16px; height:16px; cursor:pointer;">
+          <span>No follow-up required for this session</span>
+        </label>
+      </div>
+      <div id="followUpFields" class="form-grid">
+        <div class="form-group">
+          <label>Follow-up Date</label>
+          <input type="date" id="followUpDate">
+        </div>
+        <div class="form-group">
+          <label>Follow-up Mode</label>
+          <select id="followUpMode">
+            <option value="">— Select —</option>
+            <option>F2F – HS</option>
+            <option>F2F – Dorm</option>
+            <option>F2F – Hospital</option>
+            <option>WA-Audio Call</option>
+            <option>WA-Video Call</option>
+            <option>Phone Call</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Closure section -->
+  <div class="intake-only" id="closureSection">
+    <div class="card">
+      <div class="card-header" style="background:#4A6741; color:white;">Closure Information (Final session only)</div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Reason for Closure</label>
+          <select id="closureReason">
+            <option value="">— Select reason —</option>
+            <option>Resolved / Goals met</option>
+            <option>Unresponsive — no contact after 3 attempts</option>
+            <option>Repatriated</option>
+            <option>Referred out to another service</option>
+            <option>Client withdrew consent</option>
+            <option>Case transferred to another counsellor</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="phq4-block" id="phq4ClosureBlock">
+          <div class="phq4-title">PHQ-4 — Psychological Distress Screening (Closure)</div>
+          <div class="phq4-note">Rate each item for the <strong>past 2 weeks</strong>. Ask the client in their language and record their answer. 0 = Not at all &nbsp; 1 = Several days &nbsp; 2 = More than half the days &nbsp; 3 = Nearly every day.</div>
+          <div class="phq4-lang-tabs" id="phq4ClosureLangTabs">
+            <button type="button" class="phq4-lang-tab active" onclick="setPHQ4Lang('closure','en',this)">English</button>
+            <button type="button" class="phq4-lang-tab" onclick="setPHQ4Lang('closure','ta',this)">Tamil தமிழ்</button>
+            <button type="button" class="phq4-lang-tab" onclick="setPHQ4Lang('closure','bn',this)">Bengali বাংলা</button>
+            <button type="button" class="phq4-lang-tab" onclick="setPHQ4Lang('closure','zh',this)">中文 Chinese</button>
+          </div>
+          <div class="phq4-questions">
+            <div class="phq4-q">
+              <div class="phq4-q-text" id="phq4_closure_q1_text">1. Feeling nervous, anxious, or on edge</div>
+              <div class="phq4-options" id="phq4c_q1_opts">
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure')">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure')">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure')">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure')">3</button>
+              </div>
+              <input type="hidden" id="phq4c_q1" value="">
+            </div>
+            <div class="phq4-q">
+              <div class="phq4-q-text" id="phq4_closure_q2_text">2. Not being able to stop or control worrying</div>
+              <div class="phq4-options" id="phq4c_q2_opts">
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure')">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure')">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure')">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure')">3</button>
+              </div>
+              <input type="hidden" id="phq4c_q2" value="">
+            </div>
+            <div class="phq4-q">
+              <div class="phq4-q-text" id="phq4_closure_q3_text">3. Feeling down, depressed, or hopeless</div>
+              <div class="phq4-options" id="phq4c_q3_opts">
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure')">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure')">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure')">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure')">3</button>
+              </div>
+              <input type="hidden" id="phq4c_q3" value="">
+            </div>
+            <div class="phq4-q">
+              <div class="phq4-q-text" id="phq4_closure_q4_text">4. Little interest or pleasure in doing things</div>
+              <div class="phq4-options" id="phq4c_q4_opts">
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure')">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure')">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure')">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure')">3</button>
+              </div>
+              <input type="hidden" id="phq4c_q4" value="">
+            </div>
+          </div>
+          <div class="phq4-result" id="phq4ClosureResult" style="display:none;"></div>
+          <div class="phq4-attribution">
+            <strong>PHQ-4</strong> © Developed by Drs. Robert L. Spitzer, Janet B.W. Williams, Kurt Kroenke and colleagues, with an educational grant from Pfizer Inc. No permission required to reproduce or distribute. © Template adapted for HealthServe Psychotherapy & Counselling Team use only.
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+          <label>Feedback Form Sent?</label>
+          <div class="pill-group" id="feedbackPills">
+            <div class="pill outcome selected" data-val="Yes — sent to client" onclick="selectPill(this,'feedbackPills','feedbackSent')">Yes — sent</div>
+            <div class="pill outcome" data-val="Not yet" onclick="selectPill(this,'feedbackPills','feedbackSent')">Not yet</div>
+            <div class="pill outcome" data-val="Client declined" onclick="selectPill(this,'feedbackPills','feedbackSent')">Client declined</div>
+          </div>
+          <input type="hidden" id="feedbackSent" value="Yes — sent to client">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Red Flag -->
+  <div class="card">
+    <div class="card-body">
+      <label class="flag-box" id="flagBox" onclick="toggleFlag()">
+        <input type="checkbox" id="redFlag" onclick="event.stopPropagation(); toggleFlag()">
+        <div>
+          <div class="flag-box-text">🚨 Red Flag — Supervisor notification required</div>
+          <div class="flag-box-sub">Tick if there is an immediate safety concern, active SI/HI, or anything requiring Durga's attention today.</div>
+        </div>
+      </label>
+      <div id="flagNoteArea" style="display:none; margin-top:12px;">
+        <div class="form-group">
+          <label>Flag Note — describe the concern</label>
+          <textarea id="flagNote" rows="3" placeholder="Describe the specific concern requiring supervisor attention immediately."></textarea>
+        </div>
+        <div class="form-grid" style="margin-top:10px;">
+          <div class="form-group">
+            <label>Supervisor notified at (time)</label>
+            <input type="text" id="supervisorNotifiedTime" placeholder="e.g. 14:30" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" inputmode="numeric" style="width:120px;">
+          </div>
+          <div class="form-group">
+            <label>Notified via</label>
+            <select id="supervisorNotifiedVia">
+              <option value="">— Select —</option>
+              <option>WhatsApp</option>
+              <option>Phone Call</option>
+              <option>Email</option>
+              <option>In person</option>
+              <option>Teams message</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goToScreen(1)">← Back</button>
+    <button class="btn btn-primary" onclick="validateScreen2()">Next: Case Summary →</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN 3 — CASE SUMMARY FOR REFERRER -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen3">
+
+  <div class="card">
+    <div class="card-header gold">Case Summary for Referrer</div>
+    <div class="card-body">
+      <div id="csGuidanceBox" class="alert alert-info">Only complete this if a Case Summary needs to go to the referrer for this session. Leave on <strong>No CS Required</strong> for regular sessions.</div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Case Summary required this session?</label>
+        <div class="pill-group" id="csRequiredPills">
+          <div class="pill outcome selected" data-val="No" id="csNoPill" onclick="selectPill(this,'csRequiredPills','csRequired');toggleCS()">No CS Required</div>
+          <div class="pill outcome" data-val="Yes" id="csYesPill" onclick="selectPill(this,'csRequiredPills','csRequired');toggleCS()">CS Required</div>
+        </div>
+        <input type="hidden" id="csRequired" value="No">
+      </div>
+    </div>
+  </div>
+
+  <!-- Unified CS form -->
+  <div class="cs-section" id="cs-unified">
+    <div class="card">
+      <div class="card-header blue">Case Summary — for referrer</div>
+      <div class="card-body">
+        <div class="cs-note">Write in plain language. The referrer is not a clinician. Aim for 2–4 sentences per field. This will be included in the email automatically — no copy-paste needed.</div>
+        <div class="form-grid full" style="gap:14px;">
+          <div class="form-group">
+            <label>Presenting Concern</label>
+            <textarea id="cs_presenting" rows="3" placeholder="Why was the client referred? What are the main issues they presented with?"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Clinical Impression</label>
+            <textarea id="cs_impression" rows="3" placeholder="Current psychological state, key themes, engagement in session, relevant background."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Risk Level &amp; Safety Plan</label>
+            <textarea id="cs_risk_unified" rows="2" placeholder="e.g. LOW-MED — no immediate safety concern. Safety plan discussed. Monitoring continues."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Counselling Plan</label>
+            <textarea id="cs_plan" rows="3" placeholder="Approach being used, session frequency, goals agreed with client, any referrals made."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Follow-up / Next Contact</label>
+            <input type="text" id="cs_next_contact" placeholder="e.g. 27/05/2026 - F2F at HealthServe" style="width:100%; margin-bottom:8px;">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer; font-size:13px; color:var(--text-gray);">
+              <input type="checkbox" id="cs_case_closed" onchange="toggleCsClosed()" style="width:16px; height:16px; cursor:pointer;">
+              <span>Case closed — no follow-up needed</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goToScreen(2)">← Back</button>
+    <button class="btn btn-primary" onclick="validateScreen3()">Generate Output →</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN 4 — OUTPUT -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen4">
+
+  <div id="flagAlert" class="alert alert-danger" style="display:none;">
+    🚨 <strong>RED FLAG SESSION</strong> — Contact Durga immediately after sending this email.
+  </div>
+
+  <div class="card">
+    <div class="card-header">Session Record Block (CR)</div>
+    <div class="card-body">
+      <div class="alert alert-info">Save the CR as a PDF using the button below and upload it to your Teams CR folder.</div>
+      <div class="output-block" id="crOutput"></div>
+      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+        <button class="copy-btn" onclick="copyText('crOutput', this)">⍘ Copy CR Block</button>
+        <button class="copy-btn" style="background:#2D7A4F; color:white; border-color:#2D7A4F;" onclick="saveSectionAsPDF('crOutput','Session_Record')">&#x2B07; Save CR as PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="csOutputCard" style="display:none;">
+    <div class="card-header gold">Case Summary for Referrer</div>
+    <div class="card-body">
+      <div class="alert alert-info">Save the CS as a PDF using the button below and upload it to your Teams CS folder. This report will also be emailed to the Counselling team automatically.</div>
+      <div class="output-block" id="csOutput"></div>
+      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+        <button class="copy-btn" onclick="copyText('csOutput', this)">≈ Copy CS</button>
+        <button class="copy-btn" style="background:#2D7A4F; color:white; border-color:#2D7A4F;" onclick="saveSectionAsPDF('csOutput','Case_Summary')">&#x2B07; Save CS as PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Send &amp; Log</div>
+    <div class="card-body">
+      <div class="alert alert-warning" style="margin-bottom:12px;">
+        Click <strong>Send Email</strong> below. The email will open pre-filled with the session record and Case Summary (if applicable) — addressed to <strong>mentalhealth@healthserve.org.sg</strong> with Durga CC'd. Then update the Sessions Log in the Excel CRM.
+      </div>
+      <div class="btn-row" style="border:none; padding:0; margin:0;">
+        <button class="btn btn-success" onclick="sendEmail()">✉ Send Email to HealthServe</button>
+        <button class="btn btn-secondary" onclick="saveAsPDF()">⬇ Save as PDF</button>
+        <button class="btn btn-secondary" onclick="startNew()">+ New Session</button>
+        <button class="btn btn-secondary" onclick="printOutput()">⎙ Print</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ── Client data ───────────────────────────────────────────────────────────────
+// ── Supabase ──────────────────────────────────────────────────────────────────
+// REPLACE THESE TWO VALUES with your Supabase project's URL and anon key.
+// Find them in: Supabase Dashboard → Project Settings → API
+const SUPABASE_URL      = 'https://vnwtzejhhvlvxiuqgihe.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZud3R6ZWpoaHZsdnhpdXFnaWhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDUzMjAsImV4cCI6MjA5NzQyMTMyMH0.8J70HGsS5aExwETYSYJsy772UH6mVpVLeHIM8MJOsH4';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser    = null;   // Supabase auth user
+let currentProfile = null;   // Row from profiles table
+let allClients     = [];     // Loaded from Supabase on login
+const RISK_NOTES = {
+  'LOW': 'Client has adequate coping strategies in place — no current safety concern.',
+  'LOW-MED': 'Client is progressing — monitoring continues as planned, no immediate concern.',
+  'MEDIUM': 'Client is managing but requires continued support — no immediate safety concern.',
+  'MED-HIGH': 'Client is showing signs of significant distress — close monitoring in place, supervisor informed.',
+  'HIGH': 'Client is in immediate distress — safety plan activated, supervisor informed immediately.'
+};
+
+let currentClient = null;
+let currentScreen = 1;
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+  btn.textContent = 'Signing in…';
+  btn.disabled = true;
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = error.message === 'Invalid login credentials'
+      ? 'Incorrect email or password. Try again or contact Durga.'
+      : error.message;
+    errEl.style.display = 'block';
+    btn.textContent = 'Sign In';
+    btn.disabled = false;
+    return;
+  }
+  await onAuthSuccess(data.user);
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+async function onAuthSuccess(user) {
+  currentUser = user;
+  // Load profile
+  const { data: profile } = await db
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+  currentProfile = profile;
+
+  // Hide login screen, show app
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('userBadge').textContent = profile ? profile.full_name : user.email;
+  document.getElementById('userBadge').style.display = 'block';
+  document.getElementById('logoutBtn').style.display = 'block';
+
+  // Set today's date
+  document.getElementById('sessionDate').value = new Date().toISOString().split('T')[0];
+
+  // Load clients and populate counsellor select
+  await loadClientsFromSupabase();
+}
+
+async function loadClientsFromSupabase() {
+  const { data, error } = await db
+    .from('clients')
+    .select('*, group_members(name, sort_order)')
+    .eq('status', 'Active')
+    .order('name');
+  if (error) { console.error('Load clients error:', error); return; }
+
+  // Reshape group member names into the .name field used by the form
+  allClients = (data || []).map(c => {
+    if (c.case_type === 'Group' && c.group_members && c.group_members.length) {
+      const sorted = [...c.group_members].sort((a,b) => a.sort_order - b.sort_order);
+      return { ...c, name: sorted.map((m,i) => `${i+1}. ${m.name}`).join('\n') };
+    }
+    return c;
+  });
+
+  // Populate counsellor select — admin sees all, counsellor sees only themselves
+  const sel = document.getElementById('counsellorSelect');
+  sel.innerHTML = '<option value="">— Select counsellor —</option>';
+  if (currentProfile && currentProfile.role === 'admin') {
+    // Admin: list all unique counsellor names from loaded clients
+    const names = [...new Set(allClients.map(c => c.counsellor_name))].sort();
+    // Also add their own name if not in list
+    if (currentProfile && !names.includes(currentProfile.full_name)) {
+      names.unshift(currentProfile.full_name);
+    }
+    names.forEach(n => {
+      const opt = document.createElement('option');
+      opt.value = n; opt.textContent = n;
+      sel.appendChild(opt);
+    });
+  } else {
+    // Counsellor: only their own name
+    const name = currentProfile ? currentProfile.full_name : '';
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+    sel.value = name;
+    sel.disabled = true;
+  }
+  filterClients();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.onload = async function() {
+  // Check if already logged in (e.g. page reload)
+  const { data: { session } } = await db.auth.getSession();
+  if (session && session.user) {
+    await onAuthSuccess(session.user);
+  }
+  // Otherwise login screen stays visible (it's shown by default)
+};
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+
+
+
+function validateScreen3() {
+  const errors = [];
+
+  // Case Summary — only required if CS = Yes
+  const csType_v = document.getElementById('csRequired') ? document.getElementById('csRequired').value : 'No';
+  if (csType_v === 'Yes') {
+    const csPresenting_v = document.getElementById('cs_presenting')   ? document.getElementById('cs_presenting').value.trim()   : '';
+    const csImpression_v = document.getElementById('cs_impression')   ? document.getElementById('cs_impression').value.trim()   : '';
+    const csPlan_v       = document.getElementById('cs_plan')         ? document.getElementById('cs_plan').value.trim()         : '';
+    const csClosed_v     = document.getElementById('cs_case_closed')  ? document.getElementById('cs_case_closed').checked        : false;
+    const csNext_v       = document.getElementById('cs_next_contact') ? document.getElementById('cs_next_contact').value.trim() : '';
+
+    if (!csPresenting_v)              errors.push('• Presenting Concern — required');
+    if (!csImpression_v)              errors.push('• Clinical Impression — required');
+    if (!csPlan_v)                    errors.push('• Counselling Plan — required');
+    if (!csClosed_v && !csNext_v)     errors.push('• Follow-up / Next Contact — required (or tick Case Closed)');
+  }
+
+  if (errors.length > 0) {
+    alert('Case Summary is marked as Required. Please complete all fields:\n\n' + errors.join('\n'));
+    return;
+  }
+  generateOutput();
+}
+
+function validateScreen2() {
+  const errors = [];
+
+  // SOAP notes
+  const soapS_v = document.getElementById('soapS') ? document.getElementById('soapS').value.trim() : '';
+  const soapA_v = document.getElementById('soapA') ? document.getElementById('soapA').value.trim() : '';
+  const soapP_v = document.getElementById('soapP') ? document.getElementById('soapP').value.trim() : '';
+  if (!soapS_v) errors.push('• SOAP S (Subjective) — what did the client say?');
+  if (!soapA_v) errors.push('• SOAP A (Assessment) — your clinical impression');
+  if (!soapP_v) errors.push('• SOAP P (Plan) — next steps agreed with client');
+
+  // Outcome
+  const outcome_v = document.getElementById('sessionOutcome') ? document.getElementById('sessionOutcome').value : '';
+  if (!outcome_v) errors.push('• Outcome — how did the session end?');
+
+  // Follow-up date
+  const noFU_v   = document.getElementById('noFollowUp') ? document.getElementById('noFollowUp').checked : false;
+  const fuDate_v = document.getElementById('followUpDate') ? document.getElementById('followUpDate').value : '';
+  if (!noFU_v && !fuDate_v) errors.push('• Follow-up Date — enter a date or tick "No follow-up"');
+
+  // PHQ-4 — required for Intake and Closing only (not Progress)
+  const sessStage_phq = document.getElementById('sessionStage') ? document.getElementById('sessionStage').value : '';
+  const phqRequired = (sessStage_phq === 'Intake' || sessStage_phq === 'Closing');
+  if (phqRequired) {
+    const phq4_q1 = document.getElementById('phq4_q1') ? document.getElementById('phq4_q1').value : '';
+    const phq4_q2 = document.getElementById('phq4_q2') ? document.getElementById('phq4_q2').value : '';
+    const phq4_q3 = document.getElementById('phq4_q3') ? document.getElementById('phq4_q3').value : '';
+    const phq4_q4 = document.getElementById('phq4_q4') ? document.getElementById('phq4_q4').value : '';
+    if (!phq4_q1 || !phq4_q2 || !phq4_q3 || !phq4_q4) {
+      errors.push('• PHQ-4 — required for Intake and Closing sessions (all 4 questions)');
+    }
+  }
+
+  // ASQ — if visible, all 4 required
+  const asqBlock = document.getElementById('asqBlock');
+  const asqVisible = asqBlock && asqBlock.style.display !== 'none';
+  if (asqVisible) {
+    const asq1_v = document.getElementById('asq1') ? document.getElementById('asq1').value : '';
+    const asq2_v = document.getElementById('asq2') ? document.getElementById('asq2').value : '';
+    const asq3_v = document.getElementById('asq3') ? document.getElementById('asq3').value : '';
+    const asq4_v = document.getElementById('asq4') ? document.getElementById('asq4').value : '';
+    if (!asq1_v || !asq2_v || !asq3_v || !asq4_v) {
+      errors.push('• ASQ — all 4 suicide risk questions must be answered');
+    }
+    // Safety plan required if any ASQ = Yes
+    const anyYes = asq1_v === 'Yes' || asq2_v === 'Yes' || asq3_v === 'Yes' || asq4_v === 'Yes';
+    if (anyYes) {
+      const spBlock   = document.getElementById('safetyPlanBlock');
+      const spVisible = spBlock && spBlock.style.display !== 'none';
+      if (spVisible) {
+        const spWarning = document.getElementById('spWarningSigns')      ? document.getElementById('spWarningSigns').value.trim()      : '';
+        const spCoping  = document.getElementById('spCopingStrategies')  ? document.getElementById('spCopingStrategies').value.trim()  : '';
+        const spPerson  = document.getElementById('spSafePerson')        ? document.getElementById('spSafePerson').value.trim()        : '';
+        const spAction  = document.getElementById('spCounsellorAction')  ? document.getElementById('spCounsellorAction').value.trim()  : '';
+        if (!spWarning) errors.push('• Safety Plan — Warning Signs required');
+        if (!spCoping)  errors.push('• Safety Plan — Coping Strategies required');
+        if (!spPerson)  errors.push('• Safety Plan — Safe Person required');
+        if (!spAction)  errors.push('• Safety Plan — Counsellor Action required');
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    alert('Please complete the following before continuing:\n\n' + errors.join('\n') + '\n\nScroll up to find any missing fields.');
+    return;
+  }
+  goToScreen(3);
+}
+
+function validateScreen1() {
+  const errors = [];
+  const counsellor_v = document.getElementById('counsellorSelect').value;
+  const sessDate_v   = document.getElementById('sessionDate').value;
+  const sessMode_v   = document.getElementById('sessionMode') ? document.getElementById('sessionMode').value : '';
+  const sessDur_v    = document.getElementById('duration') ? document.getElementById('duration').value : '';
+  const sessStage_v  = document.getElementById('sessionStage') ? document.getElementById('sessionStage').value : '';
+  const riskLevel_v  = document.getElementById('riskLevel') ? document.getElementById('riskLevel').value : '';
+
+  if (!counsellor_v)  errors.push('• Counsellor — select your name');
+  if (!sessDate_v)    errors.push('• Session Date — required');
+  if (!sessMode_v)    errors.push('• Mode — required');
+  if (!sessDur_v || sessDur_v === '0') errors.push('• Duration (minutes) — required');
+  if (!sessStage_v)   errors.push('• Session Stage — required');
+  if (!riskLevel_v)   errors.push('• Risk Level — required');
+
+  if (errors.length > 0) {
+    alert('Please complete these fields before continuing:\n\n' + errors.join('\n'));
+    return;
+  }
+  goToScreen(2);
+}
+
+function goToScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen' + n).classList.add('active');
+  document.querySelectorAll('.progress-step').forEach((s,i) => {
+    s.classList.remove('active','done');
+    if (i+1 === n) s.classList.add('active');
+    else if (i+1 < n) s.classList.add('done');
+  });
+  currentScreen = n;
+  window.scrollTo(0,0);
+  if (n === 2) updateScreen2Strip();
+}
+
+// ── Filter clients by counsellor ──────────────────────────────────────────────
+function filterClients() {
+  const counsellor = document.getElementById('counsellorSelect').value;
+  const type = document.getElementById('sessionType').value;
+  const isGroup = type === 'Group';
+  const sel = document.getElementById('clientSelect');
+  sel.innerHTML = isGroup ? '<option value="">— Select group —</option>' : '<option value="">— Select client —</option>';
+
+  const step2Header = document.getElementById('step2Header');
+  const clientLabel = document.getElementById('clientLabel');
+  const clientHint = document.getElementById('clientHint');
+  if (step2Header) step2Header.textContent = isGroup ? 'Step 2 — Select Group' : 'Step 2 — Select Client';
+  if (clientLabel) clientLabel.textContent = isGroup ? 'Group' : 'Client';
+  if (clientHint) clientHint.textContent = isGroup
+    ? 'Showing active group cases assigned to you.'
+    : 'Only showing your active cases. Contact Bobby to add new cases.';
+
+  const filtered = allClients.filter(c =>
+    (counsellor === '' || c.counsellor_name === counsellor) &&
+    (type === '' || c.case_type === type)
+  );
+
+  filtered.sort((a,b) => a.name.localeCompare(b.name));
+  filtered.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.case_id;
+    opt.textContent = isGroup ? c.case_id : (c.name ? `${c.name} (${c.case_id})` : c.case_id);
+    sel.appendChild(opt);
+  });
+
+  document.getElementById('clientStrip').style.display = 'none';
+  document.getElementById('groupMembersStrip').style.display = 'none';
+  currentClient = null;
+  updateCSAutoDetect(null);
+}
+
+// ── On client select ──────────────────────────────────────────────────────────
+function onClientSelect() {
+  const cid = document.getElementById('clientSelect').value;
+  if (!cid) {
+    document.getElementById('clientStrip').style.display = 'none';
+    currentClient = null;
+    return;
+  }
+  currentClient = allClients.find(c => c.case_id === cid);
+  if (!currentClient) return;
+
+  // Update strip
+  document.getElementById('strip-caseId').textContent = currentClient.case_id;
+  document.getElementById('strip-sessions').textContent = currentClient.total_sessions || '0';
+  document.getElementById('strip-lastSUD').textContent = currentClient.last_sud_end || '—';
+  document.getElementById('strip-lastDate').textContent = currentClient.last_session_date || '—';
+  document.getElementById('strip-risk').textContent = currentClient.risk_level || '—';
+  document.getElementById('strip-issue').textContent = currentClient.issue || '—';
+  document.getElementById('clientStrip').style.display = 'grid';
+
+  // Set session number
+  document.getElementById('sessionNo').value = currentClient.next_session_no;
+
+  // Set stage
+  const stage = currentClient.stage || 'Progress';
+  document.querySelectorAll('#stagePills .pill').forEach(p => {
+    p.classList.toggle('selected', p.dataset.val === stage);
+  });
+  document.getElementById('sessionStage').value = stage;
+  toggleIntake();
+
+  // Pre-fill last SUD end as start of new session
+  if (currentClient.last_sud_end !== '' && currentClient.last_sud_end !== null && currentClient.last_sud_end !== undefined) {
+    const parsed = parseInt(currentClient.last_sud_end);
+    const val = isNaN(parsed) ? 5 : parsed;
+    document.getElementById('sudStart').value = val;
+    document.getElementById('sudStartDisplay').textContent = val;
+  }
+
+  // Show group members strip
+  const isGroup = document.getElementById('sessionType').value === 'Group';
+  const groupStrip = document.getElementById('groupMembersStrip');
+  const groupList = document.getElementById('groupMembersList');
+  if (isGroup && currentClient.name) {
+    groupList.textContent = currentClient.name;
+    groupStrip.style.display = 'block';
+    document.getElementById('strip-caseId').textContent = currentClient.case_id + ' (Group)';
+  } else {
+    groupStrip.style.display = 'none';
+  }
+
+  updateCSAutoDetect(currentClient);
+
+  // Load previous sessions from Supabase
+  loadPrevSessions(currentClient.case_id, currentClient.name || currentClient.case_id);
+}
+
+// ── Toggle intake section ─────────────────────────────────────────────────────
+function toggleIntake() {
+  const stage = document.getElementById('sessionStage').value;
+  document.getElementById('intakeSection').classList.toggle('visible', stage === 'Intake');
+  document.getElementById('closureSection').classList.toggle('visible', stage === 'Closure');
+}
+
+// ── SUD update ────────────────────────────────────────────────────────────────
+function updateSUD(sliderId, displayId) {
+  const val = document.getElementById(sliderId).value;
+  document.getElementById(displayId).textContent = val;
+}
+
+// ── Pill select ───────────────────────────────────────────────────────────────
+function selectPill(el, groupId, hiddenId) {
+  document.querySelectorAll('#' + groupId + ' .pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById(hiddenId).value = el.dataset.val;
+}
+
+// ── Risk reference ────────────────────────────────────────────────────────────
+function updateRiskRef() {
+  const risk = document.getElementById('riskLevel').value;
+  const note = RISK_NOTES[risk] || '';
+  document.getElementById('riskRef').innerHTML = risk + ' — <strong>' + note + '</strong>';
+}
+
+// ── No follow-up toggle ──────────────────────────────────────────────────────
+function toggleNoFollowUp() {
+  const noFU = document.getElementById('noFollowUp').checked;
+  const fields = document.getElementById('followUpFields');
+  const dateEl = document.getElementById('followUpDate');
+  const modeEl = document.getElementById('followUpMode');
+  fields.style.opacity = noFU ? '0.4' : '1';
+  dateEl.disabled = noFU;
+  modeEl.disabled = noFU;
+  if (noFU) { dateEl.value = ''; modeEl.value = ''; }
+}
+
+// ── Red flag ──────────────────────────────────────────────────────────────────
+function toggleFlag() {
+  const cb = document.getElementById('redFlag');
+  const box = document.getElementById('flagBox');
+  const noteArea = document.getElementById('flagNoteArea');
+  box.classList.toggle('flagged', cb.checked);
+  noteArea.style.display = cb.checked ? 'block' : 'none';
+}
+
+// ── CS auto-detect ───────────────────────────────────────────────────────────────────────────────
+function updateCSAutoDetect(client) {
+  const type = document.getElementById('sessionType').value;
+  const isGroup = type === 'Group';
+  const guidanceBox = document.getElementById('csGuidanceBox');
+  const noPill = document.getElementById('csNoPill');
+  const yesPill = document.getElementById('csYesPill');
+
+  if (isGroup) {
+    // Group sessions always require CS — lock to Yes
+    document.getElementById('csRequired').value = 'Yes';
+    yesPill.classList.add('selected');
+    noPill.classList.remove('selected');
+    noPill.style.opacity = '0.4';
+    noPill.style.pointerEvents = 'none';
+    yesPill.style.pointerEvents = 'none';
+    if (guidanceBox) {
+      guidanceBox.className = 'alert alert-warning';
+      guidanceBox.innerHTML = '📋 <strong>Group session — CS is always required.</strong> Please complete the Case Summary below for all group sessions.';
+    }
+    toggleCS();
+    return;
+  }
+
+  // Re-enable pills for individual sessions
+  noPill.style.opacity = '1';
+  noPill.style.pointerEvents = '';
+  yesPill.style.pointerEvents = '';
+
+  if (!client) {
+    if (guidanceBox) {
+      guidanceBox.className = 'alert alert-info';
+      guidanceBox.innerHTML = 'Only complete this if a Case Summary needs to go to the referrer for this session. Leave on <strong>No CS Required</strong> for regular sessions.';
+    }
+    return;
+  }
+
+  const referral = client.referral || '';
+  const csFlag = client.cs_required;
+  const isExternal = referral.startsWith('Ext -') || referral.startsWith('Ext–') || referral.startsWith('Ext -');
+
+  if (csFlag === true) {
+    // Supervisor flagged CS required
+    document.getElementById('csRequired').value = 'Yes';
+    yesPill.classList.add('selected');
+    noPill.classList.remove('selected');
+    if (guidanceBox) {
+      guidanceBox.className = 'alert alert-warning';
+      guidanceBox.innerHTML = '📋 <strong>CS flagged by supervisor for this client.</strong> Please complete the Case Summary. You may change to "No CS Required" only if Durga has confirmed it is not required this session.';
+    }
+    toggleCS();
+  } else if (isExternal) {
+    // External referral — suggest Yes but allow override
+    document.getElementById('csRequired').value = 'Yes';
+    yesPill.classList.add('selected');
+    noPill.classList.remove('selected');
+    if (guidanceBox) {
+      guidanceBox.className = 'alert alert-warning';
+      guidanceBox.innerHTML = '📋 <strong>External referral (' + referral + ') — CS recommended.</strong> A Case Summary should be sent to the referrer. Change to "No CS Required" only if a CS was already sent recently or is not required this session.';
+    }
+    toggleCS();
+  } else {
+    // Internal referral or unassigned — default No, counsellor decides
+    document.getElementById('csRequired').value = 'No';
+    noPill.classList.add('selected');
+    yesPill.classList.remove('selected');
+    if (guidanceBox) {
+      guidanceBox.className = 'alert alert-info';
+      guidanceBox.innerHTML = referral
+        ? '📋 <strong>Internal referral (' + referral + ').</strong> CS is at your discretion — select "Yes" if an update to the referrer is needed this session.'
+        : 'Only complete this if a Case Summary needs to go to the referrer for this session. Leave on <strong>No CS Required</strong> for regular sessions.';
+    }
+    toggleCS();
+  }
+}
+
+// ── CS toggle ────────────────────────────────────────────────────────────────────────────────────
+function toggleCS() {
+  const val = document.getElementById('csRequired').value;
+  document.getElementById('cs-unified').classList.toggle('visible', val === 'Yes');
+}
+
+// ── CS closed toggle ───────────────────────────────────────────────────────────────────────────
+function toggleCsClosed() {
+  const closed = document.getElementById('cs_case_closed').checked;
+  const inp = document.getElementById('cs_next_contact');
+  inp.disabled = closed;
+  inp.style.opacity = closed ? '0.4' : '1';
+  if (closed) inp.value = '';
+}
+
+// ── PHQ-4 auto-calculate ───────────────────────────────────────────────────────────────────────────
+function selectPHQ4(btn, optsId, hiddenId, context) {
+  document.querySelectorAll('#' + optsId + ' .phq4-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById(hiddenId).value = btn.dataset.val;
+  calcPHQ4(context);
+}
+
+function calcPHQ4(context) {
+  const prefix = context === 'intake' ? 'phq4_q' : 'phq4c_q';
+  const resultId = context === 'intake' ? 'phq4IntakeResult' : 'phq4ClosureResult';
+  const q1 = document.getElementById(prefix + '1').value;
+  const q2 = document.getElementById(prefix + '2').value;
+  const q3 = document.getElementById(prefix + '3').value;
+  const q4 = document.getElementById(prefix + '4').value;
+  if (q1 === '' || q2 === '' || q3 === '' || q4 === '') return;
+  const total = parseInt(q1) + parseInt(q2) + parseInt(q3) + parseInt(q4);
+  const anxiety = parseInt(q1) + parseInt(q2);
+  const depression = parseInt(q3) + parseInt(q4);
+  let severity, cls;
+  if (total <= 2) { severity = 'Normal'; cls = 'normal'; }
+  else if (total <= 5) { severity = 'Mild'; cls = 'mild'; }
+  else if (total <= 8) { severity = 'Moderate'; cls = 'moderate'; }
+  else { severity = 'Severe'; cls = 'severe'; }
+  const el = document.getElementById(resultId);
+  el.className = 'phq4-result ' + cls;
+  el.innerHTML = 'PHQ-4 Total: <strong>' + total + '/12 — ' + severity + '</strong> &nbsp;|  Anxiety subscale (Q1+Q2): ' + anxiety + '/6 &nbsp;|  Depression subscale (Q3+Q4): ' + depression + '/6';
+  el.style.display = 'block';
+}
+
+function getPHQ4Text(context) {
+  const prefix = context === 'intake' ? 'phq4_q' : 'phq4c_q';
+  const resultId = context === 'intake' ? 'phq4IntakeResult' : 'phq4ClosureResult';
+  const q1 = document.getElementById(prefix + '1').value;
+  const q2 = document.getElementById(prefix + '2').value;
+  const q3 = document.getElementById(prefix + '3').value;
+  const q4 = document.getElementById(prefix + '4').value;
+  if (q1 === '' || q2 === '' || q3 === '' || q4 === '') return null;
+  const total = parseInt(q1) + parseInt(q2) + parseInt(q3) + parseInt(q4);
+  const anxiety = parseInt(q1) + parseInt(q2);
+  const depression = parseInt(q3) + parseInt(q4);
+  let severity;
+  if (total <= 2) severity = 'Normal';
+  else if (total <= 5) severity = 'Mild';
+  else if (total <= 8) severity = 'Moderate';
+  else severity = 'Severe';
+  return 'PHQ-4: ' + total + '/12 (' + severity + ')  |  Anxiety: ' + anxiety + '/6  |  Depression: ' + depression + '/6';
+}
+
+// ── Session history (Supabase) ────────────────────────────────────────────────
+async function loadPrevSessions(caseId, clientName) {
+  const panel = document.getElementById('prevSessionsPanel');
+  const content = document.getElementById('prevSessionsContent');
+  const nameEl = document.getElementById('prevSessionsClientName');
+  nameEl.textContent = clientName;
+
+  const { data: records, error } = await db
+    .from('sessions')
+    .select('session_no, session_date, sud_start, sud_end, risk_level, session_outcome, soap_s, soap_p')
+    .eq('case_id', caseId)
+    .order('session_date', { ascending: false })
+    .limit(3);
+
+  if (error || !records || records.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  let html = '';
+  records.forEach(r => {
+    html += '<div class="prev-session-item">';
+    html += '<div class="prev-session-meta">';
+    html += '<span class="prev-session-badge">Session ' + (r.session_no || '?') + '</span>';
+    html += '<span class="prev-session-badge" style="background:#E8F0E8;">' + (r.session_date || '') + '</span>';
+    html += '<span class="prev-session-badge" style="background:#F0E8E8;">SUD ' + (r.sud_start ?? '?') + '→' + (r.sud_end ?? '?') + '</span>';
+    html += '<span class="prev-session-badge" style="background:#E8EEF8;">' + (r.risk_level || '') + '</span>';
+    html += '<span class="prev-session-badge" style="background:#F5F0E8;">' + (r.session_outcome || '') + '</span>';
+    html += '</div>';
+    if (r.soap_s) html += '<div class="prev-session-soap"><strong>S:</strong> ' + escapeHtml(r.soap_s) + '</div>';
+    if (r.soap_p) html += '<div class="prev-session-soap" style="margin-top:4px;"><strong>Plan:</strong> ' + escapeHtml(r.soap_p) + '</div>';
+    html += '</div>';
+  });
+  content.innerHTML = html;
+  panel.style.display = 'block';
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function togglePrevSessions() {
+  const body = document.getElementById('prevSessionsBody');
+  const icon = document.getElementById('prevSessionsToggleIcon');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '+' : '−';
+}
+
+// ── Screen 2 strip ────────────────────────────────────────────────────────────
+function updateScreen2Strip() {
+  if (!currentClient) return;
+  document.getElementById('strip2-name').textContent = currentClient.name || currentClient.case_id;
+  document.getElementById('strip2-sessNo').textContent = 'Session ' + (document.getElementById('sessionNo').value || '—');
+  document.getElementById('strip2-lastSUD').textContent = 'Last end: ' + (currentClient.lastDistressEnd || '—');
+  document.getElementById('clientStripScreen2').style.display = 'grid';
+}
+
+// ── Generate output ───────────────────────────────────────────────────────────
+function generateOutput() {
+  if (!currentClient) {
+    alert('Please select a client first.');
+    goToScreen(1);
+    return;
+  }
+  
+  const c = currentClient;
+  const sessNo = document.getElementById('sessionNo').value;
+  const sessDate = document.getElementById('sessionDate').value;
+  const sessTime = document.getElementById('sessionTime').value;
+  const duration = document.getElementById('duration').value;
+  const mode = document.getElementById('sessionMode').value;
+  const stage = document.getElementById('sessionStage').value;
+  const consent = document.getElementById('consentObtained').value;
+  const sudStart = document.getElementById('sudStart').value;
+  const sudEnd = document.getElementById('sudEnd').value;
+  const soapS = document.getElementById('soapS').value;
+  const soapO = document.getElementById('soapO').value;
+  const soapA = document.getElementById('soapA').value;
+  const soapP = document.getElementById('soapP').value;
+  const risk = document.getElementById('riskLevel').value;
+  const outcome = document.getElementById('sessionOutcome').value;
+  const fuDate = document.getElementById('followUpDate').value;
+  const fuMode = document.getElementById('followUpMode').value;
+  const isFlag = document.getElementById('redFlag').checked;
+  const flagNote = document.getElementById('flagNote').value;
+  const counsellor = document.getElementById('counsellorSelect').value;
+  
+  // Format date
+  const dateFormatted = sessDate ? new Date(sessDate).toLocaleDateString('en-SG', {day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const fuFormatted = fuDate ? new Date(fuDate).toLocaleDateString('en-SG', {day:'2-digit',month:'long',year:'numeric'}) : '—';
+  
+  // ── CR Block ──────────────────────────────────────────────────────────────
+  let cr = '';
+  cr += '═══════════════════════════════════════════════════════════\n';
+  cr += 'HEALTHSERVE — SESSION RECORD\n';
+  if (isFlag) cr += '🚨 RED FLAG SESSION — SUPERVISOR NOTIFICATION REQUIRED\n';
+  cr += '═══════════════════════════════════════════════════════════\n\n';
+  
+  cr += 'CLIENT & SESSION DETAILS\n';
+  cr += '─────────────────────────────────────────────────────────\n';
+  const isGroupSession = document.getElementById('sessionType').value === 'Group';
+  if (isGroupSession) {
+    cr += `Group Case ID : ${c.case_id}\n`;
+    cr += `Group Members :\n${c.name}\n`;
+  } else {
+    cr += `Client Name   : ${c.name}\n`;
+  }
+  cr += `Case ID       : ${c.case_id}\n`;
+  cr += `Counsellor    : ${counsellor}\n`;
+  cr += `Session No.   : ${sessNo}  (${stage})\n`;
+  cr += `Date          : ${dateFormatted}  ${sessTime ? '@ ' + sessTime : ''}\n`;
+  cr += `Mode          : ${mode}\n`;
+  cr += `Duration      : ${duration ? duration + ' min' : '—'}\n`;
+  cr += `Consent       : ${consent}\n\n`;
+  
+  cr += 'DISTRESS LEVEL (SUD 0–10)\n';
+  cr += '─────────────────────────────────────────────────────────\n';
+  cr += `Start of session  : ${sudStart}/10\n`;
+  cr += `End of session    : ${sudEnd}/10\n`;
+  const sudChange = parseInt(sudEnd) - parseInt(sudStart);
+  cr += `Change            : ${sudChange > 0 ? '+' : ''}${sudChange} (${sudChange < 0 ? 'Reduced' : sudChange > 0 ? 'Increased' : 'No change'})\n\n`;
+  
+  if (stage === 'Intake') {
+    cr += 'INTAKE — 5Ps FORMULATION\n';
+    cr += '─────────────────────────────────────────────────────\n';
+    cr += `Presenting    : ${document.getElementById('presenting').value || '—'}\n`;
+    cr += `Predisposing  : ${document.getElementById('predisposing').value || '—'}\n`;
+    cr += `Precipitating : ${document.getElementById('precipitating').value || '—'}\n`;
+    cr += `Perpetuating  : ${document.getElementById('perpetuating').value || '—'}\n`;
+    cr += `Protective    : ${document.getElementById('protective').value || '—'}\n`;
+    const phq4text = getPHQ4Text('intake');
+    if (phq4text) cr += phq4text + '\n';
+    const treatmentGoal = document.getElementById('treatmentGoal').value;
+    if (treatmentGoal) cr += `Treatment Goal: ${treatmentGoal}\n`;
+    cr += '\n';
+  }
+  
+  cr += 'SOAP NOTES\n';
+  cr += '─────────────────────────────────────────────────────────\n';
+  cr += `S (Subjective)\n${soapS || '—'}\n\n`;
+  cr += `O (Objective)\n${soapO || '—'}\n\n`;
+  cr += `A (Assessment)\n${soapA || '—'}\n\n`;
+  cr += `P (Plan)\n${soapP || '—'}\n\n`;
+  
+  cr += 'RISK & OUTCOME\n';
+  cr += '─────────────────────────────────────────────────────────\n';
+  cr += `Risk Level    : ${risk} — ${RISK_NOTES[risk]}\n`;
+  cr += `Outcome       : ${outcome}\n`;
+  const noFollowUp = document.getElementById('noFollowUp').checked;
+  cr += `Follow-up     : ${noFollowUp ? 'None required' : fuFormatted + (fuMode ? ' (' + fuMode + ')' : (fuDate ? '' : '— not specified'))}\n`;
+  
+  const supervisorTime = document.getElementById('supervisorNotifiedTime').value;
+  const supervisorVia = document.getElementById('supervisorNotifiedVia').value;
+  if (isFlag) {
+    cr += '\n🚨 FLAG NOTE\n';
+    cr += '─────────────────────────────────────────────────────────\n';
+    cr += (flagNote || 'See supervisor immediately.') + '\n';
+    if (supervisorTime || supervisorVia) {
+      cr += `Supervisor notified : ${supervisorTime ? 'at ' + supervisorTime : ''}${supervisorVia ? ' via ' + supervisorVia : ''}\n`;
+    }
+  }
+  
+  // ASQ / CPR / Safety Plan output
+  const suicideGate = document.getElementById('suicideGateVal').value;
+  const asq1v = document.getElementById('asq1').value;
+  const asq2v = document.getElementById('asq2').value;
+  const asq3v = document.getElementById('asq3').value;
+  const asq4v = document.getElementById('asq4').value;
+  cr += '\nSUICIDE RISK ASSESSMENT\n';
+  cr += '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n';
+  if (suicideGate !== 'Yes') {
+    cr += 'Suicide risk screen : Not required this session\n';
+  } else if (asq1v || asq2v || asq3v || asq4v) {
+    cr += '\nASQ SUICIDE SCREENING\n';
+    cr += '─────────────────────────────────────────────────────────\n';
+    cr += `Q1 (Lifetime ideation)   : ${asq1v || 'Not answered'}\n`;
+    cr += `Q2 (Past few weeks)      : ${asq2v || 'Not answered'}\n`;
+    cr += `Q3 (Past attempt)        : ${asq3v || 'Not answered'}\n`;
+    cr += `Q4 (Active ideation now) : ${asq4v || 'Not answered'}\n`;
+    const anyYesASQ = [asq1v,asq2v,asq3v,asq4v].some(v => v === 'Yes');
+    if (anyYesASQ) {
+      cr += '\nCPR RISK ASSESSMENT\n';
+      cr += '─────────────────────────────────────────────────────────\n';
+      cr += `Current Plan     : ${document.getElementById('cprCurrentPlan').value || '—'}\n`;
+      const planDet = document.getElementById('cprPlanDetail').value;
+      if (planDet) cr += `Plan Detail      : ${planDet}\n`;
+      cr += `Past Attempts    : ${document.getElementById('cprPastAttempts').value || '—'}\n`;
+      const pastDet = document.getElementById('cprPastDetail').value;
+      if (pastDet) cr += `Past Detail      : ${pastDet}\n`;
+      cr += `Protective Res.  : ${document.getElementById('cprResources').value || '—'}\n`;
+      cr += `CPR Risk Level   : ${document.getElementById('cprRiskJudgement').value || '—'}\n`;
+      const spVisible = document.getElementById('safetyPlanBlock').style.display !== 'none';
+      if (spVisible) {
+        cr += '\nSAFETY PLAN\n';
+        cr += '─────────────────────────────────────────────────────────\n';
+        cr += `Warning Signs    : ${document.getElementById('spWarningSigns').value || '—'}\n`;
+        cr += `Coping Strategies: ${document.getElementById('spCopingStrategies').value || '—'}\n`;
+        cr += `Safe Person      : ${document.getElementById('spSafePerson').value || '—'}\n`;
+        cr += `Counsellor Action: ${document.getElementById('spCounsellorAction').value || '—'}\n`;
+        cr += `Crisis Line      : HealthServe 24-hr Crisis Helpline: +65 3129 5000\n`;
+      }
+    }
+  }
+  const otherRiskVal = document.getElementById('otherRiskAssessment').value;
+  if (otherRiskVal) {
+    cr += '\nOTHER RISK ASSESSMENT\n';
+    cr += '─────────────────────────────────────────────────────────\n';
+    cr += otherRiskVal + '\n';
+  }
+
+  if (stage === 'Closure') {
+    const cr_reason = document.getElementById('closureReason').value;
+    const phq4closureText = getPHQ4Text('closure');
+    const fb = document.getElementById('feedbackSent').value;
+    cr += '\nCLOSURE\n';
+    cr += '─────────────────────────────────────────────────────\n';
+    cr += `Reason        : ${cr_reason || '—'}\n`;
+    if (phq4closureText) cr += phq4closureText + '\n';
+    cr += `Feedback Form : ${fb}\n`;
+  }
+  
+  cr += '\n═══════════════════════════════════════════════════════════\n';
+  cr += `Recorded by: ${counsellor}  |  Generated: ${new Date().toLocaleString('en-SG')}\n`;
+  cr += 'HealthServe Psychotherapy & Counselling Team — CONFIDENTIAL\n';
+  
+  document.getElementById('crOutput').textContent = cr;
+  
+  // ── CS Extract ────────────────────────────────────────────────────────────
+  const csType = document.getElementById('csRequired').value;
+  let cs = '';
+  
+  if (csType === 'Yes') {
+    const csClosed = document.getElementById('cs_case_closed').checked;
+    const csNextContact = csClosed ? 'Case closed — no follow-up' : (document.getElementById('cs_next_contact').value || fuFormatted);
+    cs += '═══════════════════════════════════════════════════════════\n';
+    cs += 'HEALTHSERVE — CASE SUMMARY FOR REFERRER\n';
+    cs += '═══════════════════════════════════════════════════════════\n\n';
+    cs += `Client        : ${c.name}  (${c.case_id})\n`;
+    cs += `Counsellor    : ${counsellor}\n`;
+    cs += `Date          : ${dateFormatted}\n`;
+    cs += `Session No.   : ${sessNo}\n\n`;
+    cs += `PRESENTING CONCERN\n${document.getElementById('cs_presenting').value || '—'}\n\n`;
+    cs += `CLINICAL IMPRESSION\n${document.getElementById('cs_impression').value || '—'}\n\n`;
+    cs += `RISK LEVEL & SAFETY PLAN\n${document.getElementById('cs_risk_unified').value || risk + ' — ' + RISK_NOTES[risk]}\n\n`;
+    cs += `COUNSELLING PLAN\n${document.getElementById('cs_plan').value || '—'}\n\n`;
+    cs += `FOLLOW-UP / NEXT CONTACT\n${csNextContact}\n`;
+    cs += '\n═══════════════════════════════════════════════════════════\n';
+    cs += 'HealthServe Psychotherapy & Counselling Team — CONFIDENTIAL\n';
+    cs += 'Shared with referrer consent of client. Not for further distribution.\n';
+  }
+  
+  if (cs) {
+    document.getElementById('csOutput').textContent = cs;
+    document.getElementById('csOutputCard').style.display = 'block';
+  } else {
+    document.getElementById('csOutputCard').style.display = 'none';
+  }
+  
+  // ── Save session to Supabase ──────────────────────────────────────────────
+  const phq4_intake_vals = ['phq4_q1','phq4_q2','phq4_q3','phq4_q4'].map(id => {
+    const v = document.getElementById(id) ? document.getElementById(id).value : '';
+    return v !== '' ? parseInt(v) : null;
+  });
+  const phq4_closure_vals = ['phq4c_q1','phq4c_q2','phq4c_q3','phq4c_q4'].map(id => {
+    const v = document.getElementById(id) ? document.getElementById(id).value : '';
+    return v !== '' ? parseInt(v) : null;
+  });
+  const phq4i_total = phq4_intake_vals.every(v => v !== null)
+    ? phq4_intake_vals.reduce((a,b) => a+b, 0) : null;
+  const phq4c_total = phq4_closure_vals.every(v => v !== null)
+    ? phq4_closure_vals.reduce((a,b) => a+b, 0) : null;
+
+  const supabaseRecord = {
+    case_id:           c.case_id,
+    client_name:       c.name || c.case_id,
+    counsellor_name:   counsellor,
+    submitted_by:      currentUser ? currentUser.id : null,
+    session_no:        parseInt(sessNo) || null,
+    session_date:      sessDate || null,
+    session_time:      sessTime || null,
+    duration_mins:     parseInt(duration) || null,
+    session_mode:      mode,
+    session_stage:     stage,
+    session_type:      document.getElementById('sessionType').value,
+    consent_obtained:  consent,
+    sud_start:         parseInt(sudStart),
+    sud_end:           parseInt(sudEnd),
+    sud_change:        parseInt(sudEnd) - parseInt(sudStart),
+    soap_s:            soapS || null,
+    soap_o:            soapO || null,
+    soap_a:            soapA || null,
+    soap_p:            soapP || null,
+    risk_level:        risk,
+    session_outcome:   document.getElementById('sessionOutcome').value,
+    no_follow_up:      document.getElementById('noFollowUp').checked,
+    follow_up_date:    fuDate || null,
+    follow_up_mode:    fuMode || null,
+    red_flag:          isFlag,
+    flag_note:         isFlag ? flagNote : null,
+    supervisor_notified_time: isFlag ? (document.getElementById('supervisorNotifiedTime').value || null) : null,
+    supervisor_notified_via:  isFlag ? (document.getElementById('supervisorNotifiedVia').value || null) : null,
+    suicide_gate:      document.getElementById('suicideGateVal').value,
+    asq1:              document.getElementById('asq1').value || null,
+    asq2:              document.getElementById('asq2').value || null,
+    asq3:              document.getElementById('asq3').value || null,
+    asq4:              document.getElementById('asq4').value || null,
+    cpr_current_plan:  document.getElementById('cprCurrentPlan').value || null,
+    cpr_plan_detail:   document.getElementById('cprPlanDetail').value || null,
+    cpr_past_attempts: document.getElementById('cprPastAttempts').value || null,
+    cpr_past_detail:   document.getElementById('cprPastDetail').value || null,
+    cpr_resources:     document.getElementById('cprResources').value || null,
+    cpr_risk_judgement:document.getElementById('cprRiskJudgement').value || null,
+    sp_warning_signs:  document.getElementById('spWarningSigns').value || null,
+    sp_coping_strategies: document.getElementById('spCopingStrategies').value || null,
+    sp_safe_person:    document.getElementById('spSafePerson').value || null,
+    sp_counsellor_action: document.getElementById('spCounsellorAction').value || null,
+    other_risk_assessment: document.getElementById('otherRiskAssessment').value || null,
+    five_p_presenting: stage === 'Intake' ? (document.getElementById('presenting').value || null) : null,
+    five_p_predisposing: stage === 'Intake' ? (document.getElementById('predisposing').value || null) : null,
+    five_p_precipitating: stage === 'Intake' ? (document.getElementById('precipitating').value || null) : null,
+    five_p_perpetuating: stage === 'Intake' ? (document.getElementById('perpetuating').value || null) : null,
+    five_p_protective: stage === 'Intake' ? (document.getElementById('protective').value || null) : null,
+    treatment_goal:    stage === 'Intake' ? (document.getElementById('treatmentGoal').value || null) : null,
+    phq4_intake_q1:    phq4_intake_vals[0],
+    phq4_intake_q2:    phq4_intake_vals[1],
+    phq4_intake_q3:    phq4_intake_vals[2],
+    phq4_intake_q4:    phq4_intake_vals[3],
+    phq4_intake_total: phq4i_total,
+    phq4_intake_severity: phq4i_total !== null ? (phq4i_total <= 2 ? 'Normal' : phq4i_total <= 5 ? 'Mild' : phq4i_total <= 8 ? 'Moderate' : 'Severe') : null,
+    phq4_closure_q1:   phq4_closure_vals[0],
+    phq4_closure_q2:   phq4_closure_vals[1],
+    phq4_closure_q3:   phq4_closure_vals[2],
+    phq4_closure_q4:   phq4_closure_vals[3],
+    phq4_closure_total: phq4c_total,
+    phq4_closure_severity: phq4c_total !== null ? (phq4c_total <= 2 ? 'Normal' : phq4c_total <= 5 ? 'Mild' : phq4c_total <= 8 ? 'Moderate' : 'Severe') : null,
+    cs_required:       document.getElementById('csRequired').value,
+    cs_presenting:     document.getElementById('cs_presenting') ? (document.getElementById('cs_presenting').value || null) : null,
+    cs_impression:     document.getElementById('cs_impression') ? (document.getElementById('cs_impression').value || null) : null,
+    cs_risk_unified:   document.getElementById('cs_risk_unified') ? (document.getElementById('cs_risk_unified').value || null) : null,
+    cs_plan:           document.getElementById('cs_plan') ? (document.getElementById('cs_plan').value || null) : null,
+    cs_next_contact:   document.getElementById('cs_next_contact') ? (document.getElementById('cs_next_contact').value || null) : null,
+    cs_case_closed:    document.getElementById('cs_case_closed') ? document.getElementById('cs_case_closed').checked : false,
+    closure_reason:    stage === 'Closure' ? (document.getElementById('closureReason').value || null) : null,
+    feedback_sent:     stage === 'Closure' ? (document.getElementById('feedbackSent').value || null) : null,
+  };
+
+  db.from('sessions').insert(supabaseRecord).then(({ error: dbErr }) => {
+    if (dbErr) {
+      console.error('Supabase save error:', dbErr);
+      // Don't block the user — session is still generated for email
+    }
+  });
+  
+  // Flag alert
+  document.getElementById('flagAlert').style.display = isFlag ? 'flex' : 'none';
+  
+  goToScreen(4);
+}
+
+// ── Copy text ─────────────────────────────────────────────────────────────────
+function copyText(elementId, btn) {
+  const text = document.getElementById(elementId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⎘ Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// ── Send email ────────────────────────────────────────────────────────────────
+function sendEmail() {
+  if (!currentClient) return;
+
+  // ── VALIDATION ──────────────────────────────────────────────────────────────
+  const errors = [];
+
+  // ── Screen 1: Session Details ──
+  const counsellor_v = document.getElementById('counsellorSelect').value;
+  const sessDate_v   = document.getElementById('sessionDate').value;
+  const sessMode_v   = document.getElementById('sessionMode') ? document.getElementById('sessionMode').value : '';
+  const sessDur_v    = document.getElementById('duration') ? document.getElementById('duration').value : '';
+  const sessStage_v  = document.getElementById('sessionStage') ? document.getElementById('sessionStage').value : '';
+  const riskLevel_v  = document.getElementById('riskLevel') ? document.getElementById('riskLevel').value : '';
+  const outcome_v    = document.getElementById('sessionOutcome') ? document.getElementById('sessionOutcome').value : '';
+
+  if (!counsellor_v)                       errors.push('• Counsellor — select your name');
+  if (!sessDate_v)                         errors.push('• Session Date — required');
+  if (!sessMode_v)                         errors.push('• Mode — required');
+  if (!sessDur_v || sessDur_v === '0')     errors.push('• Duration (minutes) — required');
+  if (!sessStage_v)                        errors.push('• Session Stage — required');
+  if (!riskLevel_v)                        errors.push('• Risk Level — required');
+
+  // ── Screen 2: SOAP Notes ──
+  const soapS_v = document.getElementById('soapS') ? document.getElementById('soapS').value.trim() : '';
+  const soapA_v = document.getElementById('soapA') ? document.getElementById('soapA').value.trim() : '';
+  const soapP_v = document.getElementById('soapP') ? document.getElementById('soapP').value.trim() : '';
+
+  if (!soapS_v) errors.push('• SOAP S (Subjective) — required');
+  if (!soapA_v) errors.push('• SOAP A (Assessment) — required');
+  if (!soapP_v) errors.push('• SOAP P (Plan) — required');
+  if (!outcome_v) errors.push('• Outcome — required');
+
+  // Follow-up date
+  const noFU_v   = document.getElementById('noFollowUp') ? document.getElementById('noFollowUp').checked : false;
+  const fuDate_v = document.getElementById('followUpDate') ? document.getElementById('followUpDate').value : '';
+  if (!noFU_v && !fuDate_v) errors.push('• Follow-up Date — enter a date or tick "No follow-up"');
+
+  // ── PHQ-4 — required for Intake and Closing only ──
+  const sessStage_phq = document.getElementById('sessionStage') ? document.getElementById('sessionStage').value : '';
+  const phqRequired = (sessStage_phq === 'Intake' || sessStage_phq === 'Closing');
+  if (phqRequired) {
+    const phq4_q1 = document.getElementById('phq4_q1') ? document.getElementById('phq4_q1').value : '';
+    const phq4_q2 = document.getElementById('phq4_q2') ? document.getElementById('phq4_q2').value : '';
+    const phq4_q3 = document.getElementById('phq4_q3') ? document.getElementById('phq4_q3').value : '';
+    const phq4_q4 = document.getElementById('phq4_q4') ? document.getElementById('phq4_q4').value : '';
+    const phq4Filled = phq4_q1 !== '' && phq4_q2 !== '' && phq4_q3 !== '' && phq4_q4 !== '';
+    if (!phq4Filled) errors.push('• PHQ-4 — all 4 questions required for Intake and Closing sessions');
+  }
+
+  // ── ASQ (Suicide Risk) — if ASQ block is visible, all 4 questions required ──
+  const asqBlock = document.getElementById('asqBlock');
+  const asqVisible = asqBlock && asqBlock.style.display !== 'none';
+  if (asqVisible) {
+    const asq1_v = document.getElementById('asq1') ? document.getElementById('asq1').value : '';
+    const asq2_v = document.getElementById('asq2') ? document.getElementById('asq2').value : '';
+    const asq3_v = document.getElementById('asq3') ? document.getElementById('asq3').value : '';
+    const asq4_v = document.getElementById('asq4') ? document.getElementById('asq4').value : '';
+    if (!asq1_v || !asq2_v || !asq3_v || !asq4_v) {
+      errors.push('• ASQ (Suicide Risk Screening) — all 4 questions must be answered');
+    }
+    // If ASQ Q4 = Yes or any Yes → safety plan required
+    const anyYes = asq1_v === 'Yes' || asq2_v === 'Yes' || asq3_v === 'Yes' || asq4_v === 'Yes';
+    if (anyYes) {
+      const spBlock = document.getElementById('safetyPlanBlock');
+      const spVisible = spBlock && spBlock.style.display !== 'none';
+      if (spVisible) {
+        const spWarning  = document.getElementById('spWarningSigns') ? document.getElementById('spWarningSigns').value.trim() : '';
+        const spCoping   = document.getElementById('spCopingStrategies') ? document.getElementById('spCopingStrategies').value.trim() : '';
+        const spPerson   = document.getElementById('spSafePerson') ? document.getElementById('spSafePerson').value.trim() : '';
+        const spAction   = document.getElementById('spCounsellorAction') ? document.getElementById('spCounsellorAction').value.trim() : '';
+        if (!spWarning)  errors.push('• Safety Plan — Warning Signs required');
+        if (!spCoping)   errors.push('• Safety Plan — Coping Strategies required');
+        if (!spPerson)   errors.push('• Safety Plan — Safe Person required');
+        if (!spAction)   errors.push('• Safety Plan — Counsellor Action required');
+      }
+    }
+  }
+
+  // ── Case Summary — if CS = Yes, all 4 fields required ──
+  const csType_v = document.getElementById('csRequired') ? document.getElementById('csRequired').value : 'No';
+  if (csType_v === 'Yes') {
+    const csPresenting_v  = document.getElementById('cs_presenting')  ? document.getElementById('cs_presenting').value.trim()  : '';
+    const csImpression_v  = document.getElementById('cs_impression')  ? document.getElementById('cs_impression').value.trim()  : '';
+    const csPlan_v        = document.getElementById('cs_plan')        ? document.getElementById('cs_plan').value.trim()        : '';
+    const csNext_v        = document.getElementById('cs_next_contact')? document.getElementById('cs_next_contact').value       : '';
+    if (!csPresenting_v)  errors.push('• Case Summary — Presenting Issue required');
+    if (!csImpression_v)  errors.push('• Case Summary — Clinical Impression required');
+    if (!csPlan_v)        errors.push('• Case Summary — Management Plan required');
+    if (!csNext_v)        errors.push('• Case Summary — Next Contact Date required');
+  }
+
+  if (errors.length > 0) {
+    alert('Please complete the following before sending:\n\n' + errors.join('\n'));
+    return;
+  }
+  // ── END VALIDATION ──────────────────────────────────────────────────────────
+
+  const c = currentClient;
+  const counsellor = document.getElementById('counsellorSelect').value;
+  const sessNo = document.getElementById('sessionNo').value;
+  const sessDate = document.getElementById('sessionDate').value;
+  const dateFormatted = sessDate ? new Date(sessDate).toLocaleDateString('en-SG', {day:'2-digit',month:'long',year:'numeric'}) : '';
+  const isFlag = document.getElementById('redFlag').checked;
+  const csType = document.getElementById('csRequired').value;
+  
+  const fuDateForSubject = document.getElementById('followUpDate').value;
+  const noFUForSubject = document.getElementById('noFollowUp').checked;
+  const nextSessionStr = noFUForSubject ? '' : (fuDateForSubject ? ' — Next: ' + new Date(fuDateForSubject).toLocaleDateString('en-SG', {day:'2-digit',month:'short',year:'numeric'}) : '');
+  let subject = isFlag 
+    ? `🚨 RED FLAG — ${c.name} (${c.case_id}) Session ${sessNo} — ${dateFormatted}${nextSessionStr}`
+    : `Session Log — ${c.name} (${c.case_id}) Session ${sessNo} — ${dateFormatted}${nextSessionStr}`;
+  
+  const sudStart = document.getElementById('sudStart').value;
+  const sudEnd = document.getElementById('sudEnd').value;
+  const risk = document.getElementById('riskLevel') ? document.getElementById('riskLevel').value : '';
+  const stage = document.getElementById('sessionStage') ? document.getElementById('sessionStage').value : '';
+  const mode = document.getElementById('sessionMode') ? document.getElementById('sessionMode').value : '';
+  const duration = document.getElementById('duration') ? document.getElementById('duration').value : '';
+  const soapS = document.getElementById('soapS') ? document.getElementById('soapS').value : '';
+  const soapA = document.getElementById('soapA') ? document.getElementById('soapA').value : '';
+  const soapP = document.getElementById('soapP') ? document.getElementById('soapP').value : '';
+  const outcome = document.getElementById('sessionOutcome') ? document.getElementById('sessionOutcome').value : '';
+  const csPresenting = csType === 'Yes' ? (document.getElementById('cs_presenting') ? document.getElementById('cs_presenting').value : '') : '';
+  const csImpression = csType === 'Yes' ? (document.getElementById('cs_impression') ? document.getElementById('cs_impression').value : '') : '';
+  const csPlan = csType === 'Yes' ? (document.getElementById('cs_plan') ? document.getElementById('cs_plan').value : '') : '';
+  const csClosed = csType === 'Yes' ? (document.getElementById('cs_case_closed') ? document.getElementById('cs_case_closed').checked : false) : false;
+  const csNextContact = csType === 'Yes' ? (csClosed ? 'Case closed' : (document.getElementById('cs_next_contact') ? document.getElementById('cs_next_contact').value : '')) : '';
+  const phq4TotalEl = document.getElementById('phq4-total-intake');
+  const phq4Total = phq4TotalEl ? phq4TotalEl.textContent.replace(/[^0-9]/g,'') : '';
+  const followUpEl = document.getElementById('followUpDate');
+  const followUp = followUpEl ? followUpEl.value : '';
+
+  const jsonData = {
+    caseId: c.case_id,
+    clientName: c.name,
+    counsellor: counsellor,
+    sessionNo: parseInt(sessNo) || null,
+    sessionDate: sessDate || null,
+    sessionStage: stage,
+    mode: mode,
+    durationMins: parseInt(duration) || null,
+    sudStart: parseInt(sudStart),
+    sudEnd: parseInt(sudEnd),
+    sudChange: (parseInt(sudEnd) - parseInt(sudStart)),
+    riskLevel: risk,
+    redFlag: isFlag,
+    soapS: soapS || null,
+    soapA: soapA || null,
+    soapP: soapP || null,
+    outcome: outcome,
+    followUp: followUp || null,
+    phq4Total: phq4Total ? parseInt(phq4Total) : null,
+    csRequired: csType,
+    csPresenting: csPresenting || null,
+    csImpression: csImpression || null,
+    csPlan: csPlan || null,
+    csNextContact: csNextContact || null,
+    csClosed: csClosed,
+    generatedAt: new Date().toISOString()
+  };
+
+  let body = document.getElementById('crOutput').textContent;
+  if (csType === 'Yes' && document.getElementById('csOutput').textContent) {
+    body += '\n\n' + document.getElementById('csOutput').textContent;
+  }
+  body += '\n\n' +
+    '─────────────────────────────────────────────────────────\n' +
+    'SYSTEM DATA — for Power Automate only. Do not edit or delete this block.\n' +
+    '─────────────────────────────────────────────────────────\n' +
+    '---DATA---\n' + JSON.stringify(jsonData, (key, value) => {
+      // Sanitise string values — remove newlines, normalize dashes
+      if (typeof value === 'string') {
+        return value
+          .replace(/\r\n/g, ' ')
+          .replace(/\n/g, ' ')
+          .replace(/\r/g, ' ')
+          .replace(/\u2013/g, '-')
+          .replace(/\u2014/g, '-')
+          .trim();
+      }
+      return value;
+    }) + '\n---END---\n' +
+    '─────────────────────────────────────────────────────────';
+  
+  const mailto = `mailto:mentalhealth@healthserve.org.sg?cc=durga@healthserve.org.sg&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+}
+
+// ── Print ─────────────────────────────────────────────────────────────────────
+// ── PHQ-4 language switcher ─────────────────────────────────────────────────────────────────────────────
+const PHQ4_LANGS = {
+  en: [
+    '1. Feeling nervous, anxious, or on edge',
+    '2. Not being able to stop or control worrying',
+    '3. Feeling down, depressed, or hopeless',
+    '4. Little interest or pleasure in doing things'
+  ],
+  ta: [
+    '1. பதற்றமாகவோ, கவலைப்படவோ, மனது தளர்ச்சியடையோ உணர்கிறீர்களா?',
+    '2. கவலைப்படுவதை நிறுத்தவோ கட்டுப்படுத்தவோ முடியாத நிலை',
+    '3. மனமுஷர்ச்சியாக, மனசேர்ச்சியாக, அல்லது நிராசையாக உணர்கிறீர்களா?',
+    '4. எதிலும் ஆர்வமோ மகிழ்ச்சியோ இல்லாத உணர்வு'
+  ],
+  bn: [
+    '1. নার্ভাস, উদ্বিগ্ন বা অস্থির বোধ করা',
+    '2. দুশ্চিন্তা থামাতে বা নিয়ন্ত্রণ করতে না পারা',
+    '3. মন মরা যাওয়া, বিষণ্ণ বা নিরাশ বোধ করা',
+    '4. কোনো কাজে আগ্রহ বা আনন্দ অনুভব না করা'
+  ],
+  zh: [
+    '1. 感到紧張、焦虑或心累',
+    '2. 无法停止或控制担心',
+    '3. 感到悲观、沮丧或絕望',
+    '4. 對做事情缺乏興趣或樂趣'
+  ]
+};
+
+function setPHQ4Lang(stage, lang, btn) {
+  const prefix = stage === 'intake' ? 'phq4_intake' : 'phq4_closure';
+  const tabsId = stage === 'intake' ? 'phq4IntakeLangTabs' : 'phq4ClosureLangTabs';
+  // Update active tab
+  document.querySelectorAll('#' + tabsId + ' .phq4-lang-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  // Update question text
+  const qs = PHQ4_LANGS[lang];
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById(prefix + '_q' + i + '_text');
+    if (el) el.textContent = qs[i - 1];
+  }
+}
+
+// ── Save as PDF ───────────────────────────────────────────────────────────────────────────────
+function saveAsPDF() {
+  goToScreen(4);
+  setTimeout(() => { window.print(); }, 150);
+}
+
+function saveSectionAsPDF(blockId, filename) {
+  // Open a minimal print window with just the one block's content
+  const block = document.getElementById(blockId);
+  if (!block) return;
+  const content = block.innerText || block.textContent;
+  const clientName = document.getElementById('strip2-name') ?
+    document.getElementById('strip2-name').textContent.trim() : '';
+  const sessionNo = document.getElementById('strip2-sessNo') ?
+    ('Session ' + document.getElementById('strip2-sessNo').textContent.trim()) : '';
+  const date = document.getElementById('sessionDate') ?
+    document.getElementById('sessionDate').value : '';
+  const title = filename === 'Session_Record' ? 'Session Record (CR)' : 'Case Summary for Referrer';
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${title}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           font-size: 12px; line-height: 1.6; color: #231F1F; padding: 24px 32px; }
+    .print-header { border-bottom: 2px solid #8C0303; padding-bottom: 10px; margin-bottom: 16px; }
+    .print-header h2 { color: #8C0303; font-size: 16px; margin: 0 0 4px 0; }
+    .print-header p { margin: 0; font-size: 11px; color: #666; }
+    pre { white-space: pre-wrap; font-family: inherit; font-size: 12px; margin: 0; }
+    .print-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ccc;
+                    font-size: 10px; color: #999; }
+  </style>
+</head><body>
+  <div class="print-header">
+    <h2>HealthServe — ${title}</h2>
+    <p>${clientName} &nbsp;|&nbsp; ${sessionNo} &nbsp;|&nbsp; ${date}</p>
+  </div>
+  <pre>${content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+  <div class="print-footer">HealthServe Psychotherapy & Counselling Team — Confidential. Not for distribution.</div>
+</body></html>`;
+  const win = window.open('', '_blank', 'width=800,height=700');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 400);
+}
+
+function printOutput() {
+  saveAsPDF();
+}
+
+// ── Start new ─────────────────────────────────────────────────────────────────
+function startNew() {
+  if (confirm('Start a new session? This will clear the current form.')) {
+    location.reload();
+  }
+}
+
+// ── Suicide Risk Gate ────────────────────────────────────────────────────
+function toggleSuicideGate() {
+  const val = document.getElementById('suicideGateVal').value;
+  const asqBlock = document.getElementById('asqBlock');
+  const cprBlock = document.getElementById('cprBlock');
+  const safetyBlock = document.getElementById('safetyPlanBlock');
+  if (val === 'Yes') {
+    asqBlock.style.display = 'block';
+  } else {
+    // Hide all and reset ASQ answers
+    asqBlock.style.display = 'none';
+    cprBlock.style.display = 'none';
+    safetyBlock.style.display = 'none';
+    ['asq1','asq2','asq3','asq4'].forEach(id => {
+      document.getElementById(id).value = '';
+      document.querySelectorAll(`[data-q="${id}"]`).forEach(b => b.classList.remove('selected-yes','selected-no'));
+    });
+    const result = document.getElementById('asqResult');
+    if (result) { result.style.display = 'none'; result.innerHTML = ''; }
+  }
+}
+
+// ── ASQ Suicide Screening ─────────────────────────────────────────────────
+function selectASQ(btn) {
+  const q = btn.dataset.q;
+  const val = btn.dataset.val;
+  // Deselect siblings
+  btn.parentElement.querySelectorAll('.asq-opt').forEach(b => {
+    b.classList.remove('selected-yes', 'selected-no');
+  });
+  btn.classList.add(val === 'Yes' ? 'selected-yes' : 'selected-no');
+  document.getElementById(q).value = val;
+  evaluateASQ();
+}
+
+function evaluateASQ() {
+  const vals = ['asq1','asq2','asq3','asq4'].map(id => document.getElementById(id).value);
+  const anyAnswered = vals.some(v => v !== '');
+  const anyYes = vals.some(v => v === 'Yes');
+  const q4Yes = document.getElementById('asq4').value === 'Yes';
+  const result = document.getElementById('asqResult');
+  const cprBlock = document.getElementById('cprBlock');
+
+  if (!anyAnswered) { result.style.display = 'none'; return; }
+
+  result.style.display = 'block';
+  if (q4Yes) {
+    result.className = 'asq-result concern';
+    result.innerHTML = '🚨 <strong>Q4 YES — Immediate action required.</strong> Client is having active suicidal thoughts right now. Complete CPR assessment below and activate Red Flag immediately.';
+    // Auto-check red flag
+    const rf = document.getElementById('redFlag');
+    if (!rf.checked) { rf.checked = true; toggleFlag(); }
+  } else if (anyYes) {
+    result.className = 'asq-result concern';
+    result.innerHTML = '⚠️ <strong>Suicidal ideation present.</strong> Complete the CPR assessment below to assess risk level.';
+  } else {
+    result.className = 'asq-result clear';
+    result.innerHTML = '✓ <strong>ASQ Clear</strong> — No suicidal ideation reported. No further action required from this screen.';
+  }
+
+  cprBlock.style.display = anyYes ? 'block' : 'none';
+}
+
+function showCPRPlanDetail(show) {
+  document.getElementById('cprPlanDetailArea').style.display = show ? 'block' : 'none';
+  if (!show) document.getElementById('cprPlanDetail').value = '';
+}
+function showCPRPastDetail(show) {
+  document.getElementById('cprPastDetailArea').style.display = show ? 'block' : 'none';
+  if (!show) document.getElementById('cprPastDetail').value = '';
+}
+
+function triggerHighRiskFlag() {
+  document.getElementById('safetyPlanBlock').style.display = 'block';
+  const rf = document.getElementById('redFlag');
+  if (!rf.checked) { rf.checked = true; toggleFlag(); }
+}
+
+</script>
+</body>
+</html>
