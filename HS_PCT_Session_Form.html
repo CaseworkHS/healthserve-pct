@@ -1332,6 +1332,22 @@
       <div class="card-header blue">Case Summary — for referrer</div>
       <div class="card-body">
         <div class="cs-note">Write in plain language. The referrer is not a clinician. Aim for 2–4 sentences per field. This will be included in the email automatically — no copy-paste needed.</div>
+
+        <!-- AI Draft Button -->
+        <div style="background:#F0F4FF; border:1px solid #C5D0F0; border-radius:8px; padding:12px 14px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:13px; font-weight:600; color:#2D4580;">✨ AI-assisted CS Draft</div>
+            <div style="font-size:12px; color:#5566AA; margin-top:2px;">Reads your session notes and generates a plain-language draft. Review and edit before sending.</div>
+          </div>
+          <button class="btn" id="generateCSBtn"
+            style="background:#2D4580; color:white; white-space:nowrap; flex-shrink:0;"
+            onclick="generateCSDraft()">✨ Generate Draft</button>
+        </div>
+        <div id="csGenStatus" style="display:none; font-size:12px; color:#5566AA; margin-bottom:12px; padding:8px 12px; background:#F0F4FF; border-radius:6px;">
+          ⏳ Generating draft — usually takes 5–10 seconds…
+        </div>
+        <div id="csGenError" style="display:none;" class="alert alert-danger"></div>
+
         <div class="form-grid full" style="gap:14px;">
           <div class="form-group">
             <label>Presenting Concern</label>
@@ -1899,6 +1915,152 @@ function updateCSAutoDetect(client) {
     }
     toggleCS();
   }
+}
+
+// ── AI-assisted CS Draft ──────────────────────────────────────────────────────
+async function generateCSDraft() {
+  const btn      = document.getElementById('generateCSBtn');
+  const statusEl = document.getElementById('csGenStatus');
+  const errorEl  = document.getElementById('csGenError');
+
+  errorEl.style.display  = 'none';
+  statusEl.style.display = 'block';
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  // Gather all available session data
+  const c          = currentClient;
+  const stage      = document.getElementById('sessionStage').value;
+  const soapS      = document.getElementById('soapS').value.trim();
+  const soapO      = document.getElementById('soapO').value.trim();
+  const soapA      = document.getElementById('soapA').value.trim();
+  const soapP      = document.getElementById('soapP').value.trim();
+  const risk       = document.getElementById('riskLevel').value;
+  const outcome    = document.getElementById('sessionOutcome').value;
+  const sudStart   = document.getElementById('sudStart').value;
+  const sudEnd     = document.getElementById('sudEnd').value;
+  const fuDate     = document.getElementById('followUpDate').value;
+  const fuMode     = document.getElementById('followUpMode').value;
+  const noFU       = document.getElementById('noFollowUp').checked;
+  const sessNo     = document.getElementById('sessionNo').value;
+  const sessDate   = document.getElementById('sessionDate').value;
+  const presenting = stage === 'Intake' ? (document.getElementById('presenting').value.trim()) : '';
+  const treatGoal  = stage === 'Intake' ? (document.getElementById('treatmentGoal').value.trim()) : '';
+
+  // PHQ-4
+  const phq4text = getPHQ4Text('intake') || getPHQ4Text('closure') || '';
+
+  // Suicide risk summary
+  const suicideGate = document.getElementById('suicideGateVal').value;
+  const cprRisk = document.getElementById('cprRiskJudgement').value;
+  const spAction = document.getElementById('spCounsellorAction').value.trim();
+
+  // Safety plan exists?
+  const hasSafetyPlan = document.getElementById('safetyPlanBlock').style.display !== 'none';
+
+  // Build context for Claude
+  const sessionContext = `
+CASE REFERENCE: ${c ? c.case_id : 'Unknown'}
+SESSION: ${sessNo} | Date: ${sessDate} | Stage: ${stage} | Outcome: ${outcome}
+REFERRAL SOURCE: ${c ? (c.referral || 'Not specified') : 'Not specified'}
+PRESENTING ISSUE: ${c ? (c.issue || 'Not specified') : 'Not specified'}
+${presenting ? 'INTAKE PRESENTING CONCERN: ' + presenting : ''}
+${treatGoal ? 'TREATMENT GOAL: ' + treatGoal : ''}
+
+DISTRESS LEVELS: Start ${sudStart}/10 → End ${sudEnd}/10
+
+SOAP NOTES:
+S (What client shared): ${soapS || 'Not recorded'}
+O (Observations): ${soapO || 'Not recorded'}
+A (Clinical Assessment): ${soapA || 'Not recorded'}
+P (Plan): ${soapP || 'Not recorded'}
+
+RISK LEVEL: ${risk || 'Not specified'}
+${phq4text ? 'OUTCOME MEASURES: ' + phq4text : ''}
+${suicideGate === 'Yes' ? 'SUICIDE RISK SCREENING: Conducted' + (cprRisk ? ' — CPR Risk: ' + cprRisk : '') : 'SUICIDE RISK SCREENING: Not required this session'}
+${hasSafetyPlan ? 'SAFETY PLAN: In place. Counsellor action: ' + (spAction || 'documented') : ''}
+FOLLOW-UP: ${noFU ? 'No follow-up required' : (fuDate ? fuDate + (fuMode ? ' via ' + fuMode : '') : 'To be confirmed')}
+`.trim();
+
+  const prompt = `You are helping a psychotherapist at HealthServe, a Singapore NGO serving migrant workers, write a Case Summary (CS) for a referrer.
+
+The referrer may be a MOM welfare officer, employer, hospital social worker, or another NGO case manager. They are NOT clinicians. Write in clear, professional, plain English — no clinical jargon, no DSM terminology, no abbreviations without explanation. Be warm but professional. Be concise — 2 to 4 sentences per section.
+
+IMPORTANT: Do not include the client's name anywhere. Use the case reference number only. Do not make up information not provided. If a field has insufficient information, write a short placeholder the counsellor can fill in.
+
+Based on the session data below, generate a Case Summary with exactly these four sections. Return ONLY valid JSON with these four keys, no other text:
+{
+  "presenting_concern": "...",
+  "clinical_impression": "...",
+  "risk_and_safety": "...",
+  "counselling_plan": "..."
+}
+
+SESSION DATA:
+${sessionContext}
+
+GUIDELINES PER SECTION:
+- presenting_concern: Why was the client referred? What brought them to HealthServe? What key difficulties are they facing? (Plain language, no jargon)
+- clinical_impression: How is the client presenting emotionally and psychologically? Are they engaging? Any notable themes or progress? Translate clinical observations into everyday language.
+- risk_and_safety: State the current risk level in plain terms. If a safety plan is in place, mention it briefly. Reassure the referrer where appropriate. Never use terms like "suicidal ideation" — instead say "thoughts of harming himself" or "safety concerns" if needed.
+- counselling_plan: What is the counselling approach? How often are sessions? What are the goals? Any referrals or coordination needed with the referrer?`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error.message || 'API error');
+    }
+
+    const text = data.content[0].text.trim();
+    // Strip markdown fences if present
+    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    // Populate CS fields
+    if (parsed.presenting_concern) document.getElementById('cs_presenting').value  = parsed.presenting_concern;
+    if (parsed.clinical_impression) document.getElementById('cs_impression').value = parsed.clinical_impression;
+    if (parsed.risk_and_safety)     document.getElementById('cs_risk_unified').value = parsed.risk_and_safety;
+    if (parsed.counselling_plan)    document.getElementById('cs_plan').value        = parsed.counselling_plan;
+
+    // Auto-set follow-up if not already filled
+    if (fuDate && !document.getElementById('cs_next_contact').value) {
+      const fuFormatted = new Date(fuDate).toLocaleDateString('en-SG', {day:'2-digit', month:'short', year:'numeric'});
+      document.getElementById('cs_next_contact').value = fuFormatted + (fuMode ? ' via ' + fuMode : '');
+    }
+
+    statusEl.style.display = 'none';
+    statusEl.innerHTML = '';
+
+    // Show success nudge
+    const successNote = document.createElement('div');
+    successNote.className = 'alert alert-info';
+    successNote.style.cssText = 'margin-bottom:12px; font-size:12px;';
+    successNote.innerHTML = '✓ Draft generated. Please read through each field carefully and edit as needed before sending. This is a starting point, not a finished document.';
+    document.getElementById('cs-unified').querySelector('.card-body').insertBefore(
+      successNote,
+      document.getElementById('cs-unified').querySelector('.form-grid')
+    );
+    setTimeout(() => successNote.remove(), 8000);
+
+  } catch (err) {
+    statusEl.style.display = 'none';
+    errorEl.textContent = 'Could not generate draft: ' + err.message + '. Please fill in the fields manually.';
+    errorEl.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✨ Regenerate Draft';
 }
 
 // ── CS toggle ────────────────────────────────────────────────────────────────────────────────────
