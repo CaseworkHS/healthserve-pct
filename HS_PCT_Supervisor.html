@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthServe PCT — Supervisor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --crimson:#8C0303; --crimson-dark:#6B0202; --gold:#FFCC00; --gold-lt:#FFFBE6;
+  --gray:#D7D7D7; --bg:#F7F5F3; --border:#E0D8D4; --near-black:#231F1F;
+  --white:#FFFFFF; --green:#2D7A4F; --green-lt:#E8F5EE; --text-gray:#7F8080;
+  --red-lt:#FFEBEE; --amber-lt:#FFF8E1;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--near-black);font-size:14px;line-height:1.5;}
+.app-header{background:var(--crimson);color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.logo-text{font-size:18px;font-weight:700;}
+.logo-sub{font-size:11px;color:var(--gold);font-weight:600;letter-spacing:.5px;}
+#loginScreen{display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--crimson);z-index:9999;align-items:center;justify-content:center;}
+.container{max-width:1280px;margin:0 auto;padding:20px 16px 60px;}
+.card{background:var(--white);border-radius:8px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.card-header{background:var(--crimson);color:white;padding:10px 16px;font-weight:600;font-size:13px;}
+.card-header.gold{background:var(--gold);color:var(--near-black);}
+.card-header.green{background:var(--green);color:white;}
+.card-header.dark{background:#2D2D2D;color:white;}
+.card-body{padding:16px;}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--crimson);margin-bottom:20px;flex-wrap:wrap;}
+.tab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;color:var(--text-gray);background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;}
+.tab.active{color:var(--crimson);border-bottom-color:var(--crimson);background:var(--white);}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{background:var(--crimson);color:white;padding:8px 10px;text-align:left;font-weight:600;white-space:nowrap;}
+.data-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+.data-table tr:hover td{background:#FDF8F8;}
+.data-table tr.flagged td{background:#FFF5F5!important;}
+.table-scroll{overflow-x:auto;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 16px;text-align:center;}
+.stat-card.highlight{border-color:var(--crimson);background:var(--red-lt);}
+.stat-num{font-size:28px;font-weight:700;color:var(--crimson);}
+.stat-num.green{color:var(--green);}
+.stat-label{font-size:11px;color:var(--text-gray);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.stat-sub{font-size:11px;color:var(--text-gray);margin-top:2px;}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+label{font-size:11px;font-weight:600;color:var(--crimson);text-transform:uppercase;letter-spacing:.4px;}
+input,select{border:1px solid var(--border);border-radius:5px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--near-black);background:white;}
+input:focus,select:focus{outline:none;border-color:var(--crimson);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
+.btn-primary{background:var(--crimson);color:white;}
+.btn-primary:hover{background:var(--crimson-dark);}
+.btn-gold{background:var(--gold);color:var(--near-black);}
+.btn-secondary{background:var(--gray);color:var(--near-black);}
+.btn-green{background:var(--green);color:white;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge-red{background:#FFEBEE;color:#8C0303;}
+.badge-green{background:#E8F5EE;color:#2D7A4F;}
+.badge-amber{background:#FFF8E1;color:#7A5800;}
+.badge-gray{background:#F5F5F5;color:#555;}
+.badge-flag{background:#8C0303;color:white;}
+.pagination{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap;}
+.page-info{font-size:12px;color:var(--text-gray);}
+.chart-container{position:relative;height:280px;margin-bottom:8px;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:700px){.chart-grid{grid-template-columns:1fr;}}
+.alert{padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px;}
+.alert-info{background:#E3F2FD;border-left:3px solid #1976D2;color:#0D47A1;}
+.alert-warning{background:#FFF8E1;border-left:3px solid #F9A825;color:#6B4C00;}
+.soap-block{background:#F9F6F4;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.7;margin-top:8px;white-space:pre-wrap;}
+.section-divider{height:1px;background:var(--border);margin:16px 0;}
+.metric-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px;}
+.metric-box{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 16px;}
+.metric-box .num{font-size:24px;font-weight:700;color:var(--crimson);}
+.metric-box .lbl{font-size:12px;color:var(--text-gray);margin-top:2px;}
+.loading{text-align:center;padding:40px;color:var(--text-gray);font-size:13px;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div style="width:100%;max-width:380px;padding:24px 20px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:24px;font-weight:700;color:white;">HealthServe</div>
+      <div style="font-size:11px;color:#FFCC00;letter-spacing:1.5px;font-weight:600;margin-top:2px;">PCT SUPERVISOR — RESTRICTED</div>
+    </div>
+    <div style="background:white;border-radius:12px;padding:24px 20px;box-shadow:0 12px 40px rgba(0,0,0,.3);">
+      <div style="font-size:15px;font-weight:700;color:#231F1F;margin-bottom:4px;">Supervisor Sign In</div>
+      <div style="font-size:12px;color:#7F8080;margin-bottom:16px;">Clinical oversight access — Durga only.</div>
+      <div class="form-group" style="margin-bottom:12px;"><label>Email</label><input type="email" id="loginEmail" autocomplete="email"></div>
+      <div class="form-group" style="margin-bottom:4px;"><label>Password</label><input type="password" id="loginPassword" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="loginError" style="display:none;color:#8C0303;font-size:12px;margin:8px 0 4px;font-weight:600;"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;justify-content:center;" onclick="doLogin()" id="loginBtn">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-header">
+  <div><div class="logo-text">HealthServe</div><div class="logo-sub">PCT SUPERVISOR</div></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="userBadge" style="font-size:12px;color:var(--gold);font-weight:600;"></span>
+    <button class="btn" style="font-size:11px;background:rgba(255,255,255,.15);color:white;padding:4px 10px;" onclick="doLogout()">Sign out</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('outcomes',this)">📊 Outcomes</button>
+    <button class="tab" onclick="showTab('sessions',this)">📋 All Sessions</button>
+    <button class="tab" onclick="showTab('flags',this)">🚨 Red Flags</button>
+    <button class="tab" onclick="showTab('followup',this)">📅 Follow-Up</button>
+    <button class="tab" onclick="showTab('accountability',this)">✅ Accountability</button>
+    <button class="tab" onclick="showTab('audit',this)">🔍 Audit</button>
+    <button class="tab" onclick="showTab('export',this)">⬇ Export</button>
+  </div>
+
+  <!-- OUTCOMES -->
+  <div id="tab-outcomes" class="tab-panel">
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group"><label>Period</label>
+        <select id="outcomePeriod" onchange="loadOutcomes()">
+          <option value="month">This Month</option>
+          <option value="quarter">This Quarter</option>
+          <option value="year" selected>This Year (2026)</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Counsellor</label>
+        <select id="outcomeCounsellor" onchange="loadOutcomes()">
+          <option value="">All</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="outcomeStats">
+      <div class="stat-card"><div class="stat-num" id="os-sessions">—</div><div class="stat-label">Total Sessions</div></div>
+      <div class="stat-card"><div class="stat-num" id="os-cases">—</div><div class="stat-label">Active Cases</div></div>
+      <div class="stat-card"><div class="stat-num green" id="os-sud">—</div><div class="stat-label">Avg SUD Reduction</div><div class="stat-sub">per session</div></div>
+      <div class="stat-card"><div class="stat-num" id="os-closed">—</div><div class="stat-label">Cases Closed</div></div>
+      <div class="stat-card highlight"><div class="stat-num" id="os-flags">—</div><div class="stat-label">Red Flags</div></div>
+      <div class="stat-card"><div class="stat-num" id="os-feedback">—</div><div class="stat-label">Feedback Collected</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-header">SUD Reduction by Counsellor (Avg per session)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartSUD"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Sessions by Stage</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartStage"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">PHQ-4 Intake vs Closure (cases with both scores)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartPHQ"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Risk Level Distribution (Active Cases)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartRisk"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Session Outcomes</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartOutcome"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Sessions per Month (2026)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartMonthly"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header gold">Closure Outcomes (Cases with PHQ-4 at both Intake & Closure)</div>
+      <div class="card-body">
+        <table class="data-table" id="phqTable">
+          <thead><tr><th>Case ID</th><th>Counsellor</th><th>PHQ-4 Intake</th><th>PHQ-4 Closure</th><th>Change</th><th>SUD Start (first)</th><th>SUD End (last)</th><th>Closure Reason</th></tr></thead>
+          <tbody id="phqBody"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL SESSIONS -->
+  <div id="tab-sessions" class="tab-panel" style="display:none;">
+    <div class="card">
+      <div class="card-header">Search Sessions</div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group"><label>Counsellor</label><select id="fCounsellor" style="min-width:120px;"><option value="">All</option></select></div>
+          <div class="form-group"><label>Stage</label><select id="fStage"><option value="">All</option><option>Intake</option><option>Progress</option><option>Closure</option></select></div>
+          <div class="form-group"><label>Risk</label><select id="fRisk"><option value="">All</option><option>LOW</option><option>LOW-MED</option><option>MEDIUM</option><option>MED-HIGH</option><option>HIGH</option></select></div>
+          <div class="form-group"><label>From</label><input type="date" id="fFrom" style="width:140px;"></div>
+          <div class="form-group"><label>To</label><input type="date" id="fTo" style="width:140px;"></div>
+          <div class="form-group"><label>Search</label><input type="text" id="fSearch" placeholder="Case ID / name…" style="width:160px;"></div>
+          <div class="form-group" style="justify-content:flex-end;"><label>&nbsp;</label><button class="btn btn-primary" onclick="loadSessions()">Search</button></div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Date</th><th>Client</th><th>Case ID</th><th>Counsellor</th><th>Stage</th><th>Risk</th><th>SUD</th><th>Outcome</th><th>Flag</th><th>Detail</th></tr></thead>
+            <tbody id="sessionsBody"><tr><td colspan="11" class="loading">Use filters above and click Search.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button class="btn btn-secondary" id="prevBtn" onclick="changePage(-1)" style="padding:5px 12px;">← Prev</button>
+          <span class="page-info" id="pageInfo">—</span>
+          <button class="btn btn-secondary" id="nextBtn" onclick="changePage(1)" style="padding:5px 12px;">Next →</button>
+        </div>
+      </div>
+    </div>
+    <div id="detailCard" class="card" style="display:none;">
+      <div class="card-header gold">Session Detail — Full Clinical Record</div>
+      <div class="card-body">
+        <pre class="soap-block" id="detailContent"></pre>
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="document.getElementById('detailCard').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RED FLAGS -->
+  <div id="tab-flags" class="tab-panel" style="display:none;">
+    <div class="alert alert-warning">All sessions where a red flag was raised. Review regularly and ensure supervisor follow-up is documented.</div>
+    <div class="card">
+      <div class="card-header" style="background:#8C0303;">🚨 Red Flag Sessions</div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Client</th><th>Case ID</th><th>Counsellor</th><th>Risk</th><th>CPR Risk</th><th>Flag Note</th><th>Supervisor Notified</th><th>Safety Plan</th></tr></thead>
+            <tbody id="flagsBody"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOLLOW-UP -->
+  <div id="tab-followup" class="tab-panel" style="display:none;">
+    <div class="metric-row" id="fuMetrics">
+      <div class="metric-box"><div class="num" id="fu-overdue" style="color:#8C0303;">—</div><div class="lbl">Overdue (past follow-up date, no new session)</div></div>
+      <div class="metric-box"><div class="num" id="fu-today">—</div><div class="lbl">Due Today</div></div>
+      <div class="metric-box"><div class="num" id="fu-week">—</div><div class="lbl">Due This Week</div></div>
+      <div class="metric-box"><div class="num" id="fu-inactive">—</div><div class="lbl">No session in 30+ days (active cases)</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header" style="background:#8C0303;">⚠️ Overdue Follow-Ups</div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Client</th><th>Case ID</th><th>Counsellor</th><th>Risk</th><th>Last Session</th><th>Follow-Up Was Due</th><th>Days Overdue</th></tr></thead>
+            <tbody id="overdueBody"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header gold">Due Today & This Week</div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Client</th><th>Case ID</th><th>Counsellor</th><th>Risk</th><th>Follow-Up Date</th><th>Mode</th></tr></thead>
+            <tbody id="dueBody"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNTABILITY -->
+  <div id="tab-accountability" class="tab-panel" style="display:none;">
+    <div class="alert alert-info">Flags data quality issues. Cases missing required fields, unresponsive cases, and feedback completion rates per counsellor.</div>
+    <div class="card">
+      <div class="card-header">Counsellor Activity Summary</div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Counsellor</th><th>Type</th><th>Active Cases</th><th>Sessions This Month</th><th>Avg SUD Reduction</th><th>Feedback Rate</th><th>Overdue FU</th><th>Missing Risk Level</th></tr></thead>
+            <tbody id="accountBody"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" style="background:#8C0303;">⚠️ Data Quality Issues</div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Case ID</th><th>Client</th><th>Counsellor</th><th>Issue</th></tr></thead>
+            <tbody id="qualityBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIT -->
+  <div id="tab-audit" class="tab-panel" style="display:none;">
+    <div class="alert alert-info">Tamper-proof log of every session record insert and update. Cannot be altered by any user.</div>
+    <div class="card">
+      <div class="card-header dark">Audit Log (Last 200 Events)</div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>When</th><th>Action</th><th>User</th><th>Case ID</th><th>Session ID</th></tr></thead>
+            <tbody id="auditBody"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div id="tab-export" class="tab-panel" style="display:none;">
+    <div class="card">
+      <div class="card-header">Data Export</div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:16px;">Full clinical export including SOAP notes and risk data. For management reporting, use the Outcomes tab. This export is for migration or audit purposes.</div>
+        <div class="form-row">
+          <div class="form-group"><label>From Date</label><input type="date" id="expFrom"></div>
+          <div class="form-group"><label>To Date</label><input type="date" id="expTo"></div>
+          <div class="form-group"><label>Counsellor</label><select id="expCounsellor"><option value="">All</option></select></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+          <button class="btn btn-green" onclick="exportData('sessions')">⬇ Export Sessions (Full)</button>
+          <button class="btn btn-gold" onclick="exportData('clients')">⬇ Export Client Register</button>
+          <button class="btn btn-secondary" onclick="exportData('outcomes')">⬇ Export Outcomes Summary</button>
+        </div>
+        <div id="exportStatus" style="margin-top:12px;font-size:12px;color:var(--text-gray);"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL      = 'https://vnwtzejhhvlvxiuqgihe.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZud3R6ZWpoaHZsdnhpdXFnaWhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDUzMjAsImV4cCI6MjA5NzQyMTMyMH0.8J70HGsS5aExwETYSYJsy772UH6mVpVLeHIM8MJOsH4';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null, currentProfile = null;
+let allProfiles = {}, allClients = [];
+let sessionPage = 0; const PAGE_SIZE = 50;
+let charts = {};
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.style.display = 'none'; btn.textContent = 'Signing in…'; btn.disabled = true;
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+  if (error) { errEl.textContent = 'Incorrect email or password.'; errEl.style.display = 'block'; btn.textContent = 'Sign In'; btn.disabled = false; return; }
+  const { data: profile } = await db.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
+  if (!profile || profile.role !== 'admin') {
+    await db.auth.signOut();
+    errEl.textContent = 'Supervisor access only. Contact Durga.';
+    errEl.style.display = 'block'; btn.textContent = 'Sign In'; btn.disabled = false; return;
+  }
+  currentUser = data.user; currentProfile = profile;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('userBadge').textContent = profile.full_name + ' (Supervisor)';
+  await init();
+}
+async function doLogout() { await db.auth.signOut(); location.reload(); }
+
+async function init() {
+  const { data: profiles } = await db.from('profiles').select('id,full_name,role,staff_type');
+  if (profiles) profiles.forEach(p => { allProfiles[p.id] = p; });
+  const { data: clients } = await db.from('clients').select('*');
+  allClients = clients || [];
+  const names = profiles ? [...new Set(profiles.map(p => p.full_name))].sort() : [];
+  ['outcomeCounsellor','fCounsellor','expCounsellor'].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+  });
+  await loadOutcomes();
+  await loadFlags();
+  await loadFollowUp();
+  await loadAccountability();
+  await loadAudit();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).style.display = 'block';
+  btn.classList.add('active');
+}
+
+// ── Outcomes ──────────────────────────────────────────────────────────────────
+function getDateFilter() {
+  const period = document.getElementById('outcomePeriod').value;
+  const now = new Date();
+  if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  if (period === 'quarter') {
+    const q = Math.floor(now.getMonth() / 3);
+    return new Date(now.getFullYear(), q * 3, 1).toISOString().split('T')[0];
+  }
+  if (period === 'year') return `${now.getFullYear()}-01-01`;
+  return null;
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+async function loadOutcomes() {
+  const fromDate = getDateFilter();
+  const counsellor = document.getElementById('outcomeCounsellor').value;
+  let q = db.from('sessions').select('*');
+  if (fromDate) q = q.gte('session_date', fromDate);
+  if (counsellor) q = q.eq('counsellor_name', counsellor);
+  const { data: sessions } = await q;
+  if (!sessions) return;
+
+  // Stats
+  const totalSessions = sessions.length;
+  const activeCases = allClients.filter(c => c.status === 'Active').length;
+  const sudChanges = sessions.filter(s => s.sud_start !== null && s.sud_end !== null).map(s => s.sud_end - s.sud_start);
+  const avgSUD = sudChanges.length ? (sudChanges.reduce((a,b) => a+b, 0) / sudChanges.length).toFixed(1) : '—';
+  const closed = sessions.filter(s => s.session_stage === 'Closure' && s.closure_reason).length;
+  const flags = sessions.filter(s => s.red_flag).length;
+  const feedbackSent = sessions.filter(s => s.feedback_sent && s.feedback_sent !== 'Not yet').length;
+  const closureSessions = sessions.filter(s => s.session_stage === 'Closure').length;
+  const feedbackRate = closureSessions ? Math.round((feedbackSent / closureSessions) * 100) + '%' : '—';
+
+  document.getElementById('os-sessions').textContent = totalSessions;
+  document.getElementById('os-cases').textContent = activeCases;
+  document.getElementById('os-sud').textContent = avgSUD > 0 ? '+' + avgSUD : avgSUD;
+  document.getElementById('os-closed').textContent = closed;
+  document.getElementById('os-flags').textContent = flags;
+  document.getElementById('os-feedback').textContent = feedbackRate;
+
+  // Chart: SUD by counsellor
+  const counsellors = [...new Set(sessions.map(s => s.counsellor_name))].filter(Boolean);
+  const sudByCounsellor = counsellors.map(c => {
+    const ss = sessions.filter(s => s.counsellor_name === c && s.sud_start !== null && s.sud_end !== null);
+    return ss.length ? ss.reduce((a,s) => a + (s.sud_end - s.sud_start), 0) / ss.length : 0;
+  });
+  destroyChart('chartSUD');
+  charts['chartSUD'] = new Chart(document.getElementById('chartSUD'), {
+    type: 'bar',
+    data: { labels: counsellors, datasets: [{ label: 'Avg SUD change', data: sudByCounsellor, backgroundColor: sudByCounsellor.map(v => v <= 0 ? '#2D7A4F' : '#8C0303') }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: 'SUD Change (negative = reduction)' } } } }
+  });
+
+  // Chart: Stage
+  const stages = { Intake: 0, Progress: 0, Closure: 0 };
+  sessions.forEach(s => { if (stages[s.session_stage] !== undefined) stages[s.session_stage]++; });
+  destroyChart('chartStage');
+  charts['chartStage'] = new Chart(document.getElementById('chartStage'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(stages), datasets: [{ data: Object.values(stages), backgroundColor: ['#8C0303','#FFCC00','#2D7A4F'] }] },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  // Chart: PHQ-4 intake vs closure
+  const closedCases = allClients.filter(c => c.status === 'Closed' || sessions.some(s => s.case_id === c.case_id && s.session_stage === 'Closure'));
+  const phqPairs = [];
+  closedCases.forEach(c => {
+    const intake = sessions.filter(s => s.case_id === c.case_id && s.phq4_intake_total !== null).sort((a,b) => a.session_date > b.session_date ? 1 : -1)[0];
+    const closure = sessions.filter(s => s.case_id === c.case_id && s.phq4_closure_total !== null).sort((a,b) => a.session_date > b.session_date ? -1 : 1)[0];
+    if (intake && closure) phqPairs.push({ caseId: c.case_id, intake: intake.phq4_intake_total, closure: closure.phq4_closure_total });
+  });
+  destroyChart('chartPHQ');
+  charts['chartPHQ'] = new Chart(document.getElementById('chartPHQ'), {
+    type: 'bar',
+    data: {
+      labels: phqPairs.map(p => p.caseId),
+      datasets: [
+        { label: 'PHQ-4 Intake', data: phqPairs.map(p => p.intake), backgroundColor: '#8C030366' },
+        { label: 'PHQ-4 Closure', data: phqPairs.map(p => p.closure), backgroundColor: '#2D7A4F99' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 12, title: { display: true, text: 'PHQ-4 Score (0–12)' } } } }
+  });
+
+  // Chart: Risk distribution
+  const riskLevels = { LOW: 0, 'LOW-MED': 0, MEDIUM: 0, 'MED-HIGH': 0, HIGH: 0 };
+  allClients.filter(c => c.status === 'Active').forEach(c => { if (c.risk_level && riskLevels[c.risk_level] !== undefined) riskLevels[c.risk_level]++; });
+  destroyChart('chartRisk');
+  charts['chartRisk'] = new Chart(document.getElementById('chartRisk'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(riskLevels), datasets: [{ data: Object.values(riskLevels), backgroundColor: ['#4CAF50','#8BC34A','#FFCC00','#FF9800','#8C0303'] }] },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  // Chart: Outcomes
+  const outcomes = {};
+  sessions.forEach(s => { if (s.session_outcome) outcomes[s.session_outcome] = (outcomes[s.session_outcome] || 0) + 1; });
+  destroyChart('chartOutcome');
+  charts['chartOutcome'] = new Chart(document.getElementById('chartOutcome'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(outcomes), datasets: [{ data: Object.values(outcomes), backgroundColor: ['#2D7A4F','#FFCC00','#8C0303','#FF9800','#666'] }] },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  // Chart: Monthly sessions
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthly = new Array(12).fill(0);
+  sessions.forEach(s => { if (s.session_date) { const m = parseInt(s.session_date.split('-')[1]) - 1; monthly[m]++; } });
+  destroyChart('chartMonthly');
+  charts['chartMonthly'] = new Chart(document.getElementById('chartMonthly'), {
+    type: 'bar',
+    data: { labels: months, datasets: [{ label: 'Sessions', data: monthly, backgroundColor: '#8C030366', borderColor: '#8C0303', borderWidth: 1 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+
+  // PHQ-4 table
+  const tbody = document.getElementById('phqBody');
+  if (!phqPairs.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">No cases with both intake and closure PHQ-4 scores yet.</td></tr>'; }
+  else {
+    tbody.innerHTML = phqPairs.map(p => {
+      const change = p.closure - p.intake;
+      const s_intake = sessions.find(s => s.case_id === p.caseId && s.session_stage === 'Intake');
+      const s_closure = sessions.filter(s => s.case_id === p.caseId && s.session_stage === 'Closure').sort((a,b) => b.session_date > a.session_date ? 1 : -1)[0];
+      return `<tr>
+        <td><code>${p.caseId}</code></td>
+        <td>${s_closure?.counsellor_name || '—'}</td>
+        <td>${p.intake}/12</td>
+        <td>${p.closure}/12</td>
+        <td><span class="badge ${change < 0 ? 'badge-green' : change > 0 ? 'badge-red' : 'badge-gray'}">${change > 0 ? '+' : ''}${change}</span></td>
+        <td>${s_intake?.sud_start ?? '—'}</td>
+        <td>${s_closure?.sud_end ?? '—'}</td>
+        <td>${s_closure?.closure_reason || '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ── Sessions ──────────────────────────────────────────────────────────────────
+async function loadSessions() { sessionPage = 0; await fetchSessions(); }
+async function fetchSessions() {
+  const tbody = document.getElementById('sessionsBody');
+  tbody.innerHTML = '<tr><td colspan="11" class="loading">Loading…</td></tr>';
+  let q = db.from('sessions').select('*', { count: 'exact' });
+  const c = document.getElementById('fCounsellor').value;
+  const st = document.getElementById('fStage').value;
+  const rk = document.getElementById('fRisk').value;
+  const fr = document.getElementById('fFrom').value;
+  const to = document.getElementById('fTo').value;
+  const sr = document.getElementById('fSearch').value.trim();
+  if (c) q = q.eq('counsellor_name', c);
+  if (st) q = q.eq('session_stage', st);
+  if (rk) q = q.eq('risk_level', rk);
+  if (fr) q = q.gte('session_date', fr);
+  if (to) q = q.lte('session_date', to);
+  if (sr) q = q.or(`case_id.ilike.%${sr}%,client_name.ilike.%${sr}%`);
+  const { data, count } = await q.order('session_date', { ascending: false }).range(sessionPage * PAGE_SIZE, (sessionPage + 1) * PAGE_SIZE - 1);
+  const total = count ?? 0;
+  document.getElementById('pageInfo').textContent = `${sessionPage * PAGE_SIZE + 1}–${Math.min((sessionPage+1)*PAGE_SIZE,total)} of ${total}`;
+  document.getElementById('prevBtn').disabled = sessionPage === 0;
+  document.getElementById('nextBtn').disabled = (sessionPage+1)*PAGE_SIZE >= total;
+  if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="11" class="loading">No sessions found.</td></tr>'; return; }
+  tbody.innerHTML = data.map((r, i) => `<tr class="${r.red_flag ? 'flagged' : ''}">
+    <td>${sessionPage*PAGE_SIZE+i+1}</td>
+    <td style="white-space:nowrap;">${r.session_date||'—'}</td>
+    <td>${r.client_name||'—'}</td>
+    <td><code>${r.case_id||'—'}</code></td>
+    <td>${r.counsellor_name||'—'}</td>
+    <td>${r.session_stage||'—'}</td>
+    <td>${riskBadge(r.risk_level)}</td>
+    <td>${r.sud_start??'—'}→${r.sud_end??'—'}</td>
+    <td>${r.session_outcome||'—'}</td>
+    <td>${r.red_flag ? '<span class="badge badge-flag">🚨</span>' : ''}</td>
+    <td><button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;" onclick='showDetail(${JSON.stringify(r)})'>View</button></td>
+  </tr>`).join('');
+}
+async function changePage(d) { sessionPage = Math.max(0, sessionPage + d); await fetchSessions(); window.scrollTo(0,0); }
+
+function showDetail(r) {
+  const lines = [
+    `CLIENT: ${r.client_name}  (${r.case_id})`,
+    `Counsellor: ${r.counsellor_name}  |  Session ${r.session_no}  |  ${r.session_date}  ${r.session_time||''}`,
+    `Mode: ${r.session_mode}  |  Duration: ${r.duration_mins ? r.duration_mins+'min' : '—'}  |  Stage: ${r.session_stage}  |  Type: ${r.session_type}`,
+    `Consent: ${r.consent_obtained}`,
+    '',`SUD: ${r.sud_start}→${r.sud_end} (${r.sud_change >= 0 ? '+':''}${r.sud_change})  |  Risk: ${r.risk_level}  |  Outcome: ${r.session_outcome}`,
+    `Follow-up: ${r.no_follow_up ? 'None required' : (r.follow_up_date||'—') + ' ' + (r.follow_up_mode||'')}`,
+    '','── SOAP NOTES ──',
+    `S: ${r.soap_s||'—'}`,`O: ${r.soap_o||'—'}`,`A: ${r.soap_a||'—'}`,`P: ${r.soap_p||'—'}`,
+  ];
+  if (r.suicide_gate === 'Yes') {
+    lines.push('','── SUICIDE RISK ──',`ASQ: Q1=${r.asq1} Q2=${r.asq2} Q3=${r.asq3} Q4=${r.asq4}`);
+    if (r.cpr_risk_judgement) lines.push(`CPR Risk: ${r.cpr_risk_judgement}`);
+    if (r.sp_safe_person) lines.push(`Safe Person: ${r.sp_safe_person}`);
+    if (r.sp_counsellor_action) lines.push(`Action: ${r.sp_counsellor_action}`);
+  }
+  if (r.phq4_intake_total !== null && r.phq4_intake_total !== undefined) lines.push('',`PHQ-4 Intake: ${r.phq4_intake_total}/12 — ${r.phq4_intake_severity}`);
+  if (r.phq4_closure_total !== null && r.phq4_closure_total !== undefined) lines.push(`PHQ-4 Closure: ${r.phq4_closure_total}/12 — ${r.phq4_closure_severity}`);
+  if (r.session_stage === 'Intake' && r.five_p_presenting) {
+    lines.push('','── 5Ps ──',`Presenting: ${r.five_p_presenting}`,`Treatment Goal: ${r.treatment_goal||'—'}`);
+  }
+  if (r.red_flag) { lines.push('','🚨 RED FLAG',`Note: ${r.flag_note}`,`Supervisor: ${r.supervisor_notified_time||'—'} via ${r.supervisor_notified_via||'—'}`); }
+  if (r.session_stage === 'Closure') { lines.push('','── CLOSURE ──',`Reason: ${r.closure_reason||'—'}`,`Feedback: ${r.feedback_sent||'—'}`); }
+  document.getElementById('detailContent').textContent = lines.join('\n');
+  document.getElementById('detailCard').style.display = 'block';
+  document.getElementById('detailCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Red Flags ─────────────────────────────────────────────────────────────────
+async function loadFlags() {
+  const { data } = await db.from('sessions').select('session_date,client_name,case_id,counsellor_name,risk_level,cpr_risk_judgement,flag_note,supervisor_notified_time,supervisor_notified_via,sp_safe_person,sp_counsellor_action').eq('red_flag', true).order('session_date', { ascending: false });
+  const tbody = document.getElementById('flagsBody');
+  if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="9" class="loading">No red flag sessions.</td></tr>'; return; }
+  tbody.innerHTML = data.map(r => `<tr style="background:#FFF5F5;">
+    <td>${r.session_date||'—'}</td><td>${r.client_name||'—'}</td><td><code>${r.case_id||'—'}</code></td>
+    <td>${r.counsellor_name||'—'}</td><td>${riskBadge(r.risk_level)}</td>
+    <td>${r.cpr_risk_judgement ? `<span class="badge badge-red">${r.cpr_risk_judgement}</span>` : '—'}</td>
+    <td style="max-width:200px;word-break:break-word;">${r.flag_note||'—'}</td>
+    <td>${r.supervisor_notified_time ? r.supervisor_notified_time+' via '+(r.supervisor_notified_via||'—') : '—'}</td>
+    <td style="font-size:11px;">${r.sp_safe_person ? r.sp_safe_person : '—'}</td>
+  </tr>`).join('');
+}
+
+// ── Follow-Up ─────────────────────────────────────────────────────────────────
+async function loadFollowUp() {
+  const today = new Date().toISOString().split('T')[0];
+  const weekEnd = new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0];
+  const thirtyAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+
+  // Get last session per active case
+  const { data: sessions } = await db.from('sessions').select('case_id,session_date,follow_up_date,follow_up_mode,counsellor_name,no_follow_up').order('session_date', { ascending: false });
+  const lastSession = {};
+  sessions?.forEach(s => { if (!lastSession[s.case_id]) lastSession[s.case_id] = s; });
+
+  const activeCases = allClients.filter(c => c.status === 'Active');
+  const overdue = [], due = [], inactive = [];
+
+  activeCases.forEach(c => {
+    const ls = lastSession[c.case_id];
+    if (!ls) return;
+    const fuDate = ls.follow_up_date;
+    const lastDate = ls.session_date;
+    if (fuDate && fuDate < today && !ls.no_follow_up) overdue.push({ ...c, fuDate, lastDate, counsellor: ls.counsellor_name, fuMode: ls.follow_up_mode });
+    else if (fuDate && fuDate >= today && fuDate <= weekEnd) due.push({ ...c, fuDate, counsellor: ls.counsellor_name, fuMode: ls.follow_up_mode });
+    if (lastDate && lastDate < thirtyAgo) inactive.push(c);
+  });
+
+  const todayDue = due.filter(c => c.fuDate === today);
+  document.getElementById('fu-overdue').textContent = overdue.length;
+  document.getElementById('fu-today').textContent = todayDue.length;
+  document.getElementById('fu-week').textContent = due.length;
+  document.getElementById('fu-inactive').textContent = inactive.length;
+
+  const overdueBody = document.getElementById('overdueBody');
+  overdueBody.innerHTML = !overdue.length ? '<tr><td colspan="7" class="loading">No overdue follow-ups.</td></tr>' :
+    overdue.map(c => {
+      const days = Math.round((new Date(today) - new Date(c.fuDate)) / (1000*60*60*24));
+      return `<tr style="background:#FFF5F5;">
+        <td>${c.name}</td><td><code>${c.case_id}</code></td><td>${c.counsellor}</td>
+        <td>${riskBadge(c.risk_level)}</td><td>${c.lastDate}</td><td>${c.fuDate}</td>
+        <td><span class="badge badge-red">${days}d overdue</span></td>
+      </tr>`;
+    }).join('');
+
+  const dueBody = document.getElementById('dueBody');
+  dueBody.innerHTML = !due.length ? '<tr><td colspan="6" class="loading">No follow-ups due this week.</td></tr>' :
+    due.map(c => `<tr>
+      <td>${c.name}</td><td><code>${c.case_id}</code></td><td>${c.counsellor}</td>
+      <td>${riskBadge(c.risk_level)}</td>
+      <td><strong>${c.fuDate === today ? '📅 TODAY — ' : ''}${c.fuDate}</strong></td>
+      <td>${c.fuMode||'—'}</td>
+    </tr>`).join('');
+}
+
+// ── Accountability ─────────────────────────────────────────────────────────────
+async function loadAccountability() {
+  const today = new Date().toISOString().split('T')[0];
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const { data: sessions } = await db.from('sessions').select('*');
+  if (!sessions) return;
+
+  const counsellors = Object.values(allProfiles).filter(p => p.role !== 'admin' || true);
+  const rows = Object.values(allProfiles).map(p => {
+    const mySessions = sessions.filter(s => s.counsellor_name === p.full_name);
+    const myActiveCases = allClients.filter(c => c.status === 'Active' && c.counsellor_name === p.full_name).length;
+    const thisMonth = mySessions.filter(s => s.session_date >= monthStart).length;
+    const sudChanges = mySessions.filter(s => s.sud_start !== null && s.sud_end !== null).map(s => s.sud_end - s.sud_start);
+    const avgSUD = sudChanges.length ? (sudChanges.reduce((a,b) => a+b,0)/sudChanges.length).toFixed(1) : '—';
+    const closures = mySessions.filter(s => s.session_stage === 'Closure');
+    const feedbackRate = closures.length ? Math.round(closures.filter(s => s.feedback_sent && s.feedback_sent !== 'Not yet').length / closures.length * 100) + '%' : '—';
+    const lastSessions = {};
+    mySessions.forEach(s => { if (!lastSessions[s.case_id] || s.session_date > lastSessions[s.case_id].session_date) lastSessions[s.case_id] = s; });
+    const overdueFU = Object.values(lastSessions).filter(s => s.follow_up_date && s.follow_up_date < today && !s.no_follow_up).length;
+    const missingRisk = mySessions.filter(s => !s.risk_level).length;
+    return { name: p.full_name, type: p.staff_type || 'staff', myActiveCases, thisMonth, avgSUD, feedbackRate, overdueFU, missingRisk };
+  });
+
+  document.getElementById('accountBody').innerHTML = rows.map(r => `<tr>
+    <td><strong>${r.name}</strong></td>
+    <td><span class="badge ${r.type === 'volunteer' ? 'badge-amber' : 'badge-green'}">${r.type}</span></td>
+    <td style="text-align:center;">${r.myActiveCases}</td>
+    <td style="text-align:center;">${r.thisMonth}</td>
+    <td style="text-align:center;">${r.avgSUD}</td>
+    <td style="text-align:center;">${r.feedbackRate}</td>
+    <td style="text-align:center;">${r.overdueFU > 0 ? `<span class="badge badge-red">${r.overdueFU}</span>` : '0'}</td>
+    <td style="text-align:center;">${r.missingRisk > 0 ? `<span class="badge badge-amber">${r.missingRisk}</span>` : '0'}</td>
+  </tr>`).join('');
+
+  // Data quality
+  const issues = [];
+  sessions.forEach(s => {
+    if (!s.risk_level) issues.push({ case_id: s.case_id, client: s.client_name, counsellor: s.counsellor_name, issue: `Session ${s.session_no} (${s.session_date}): Risk level missing` });
+    if (s.session_stage === 'Closure' && !s.closure_reason) issues.push({ case_id: s.case_id, client: s.client_name, counsellor: s.counsellor_name, issue: `Session ${s.session_no}: Closure reason missing` });
+    if (!s.soap_s && !s.soap_p) issues.push({ case_id: s.case_id, client: s.client_name, counsellor: s.counsellor_name, issue: `Session ${s.session_no}: SOAP notes missing` });
+  });
+  const qBody = document.getElementById('qualityBody');
+  qBody.innerHTML = !issues.length ? '<tr><td colspan="4" class="loading">No data quality issues found.</td></tr>' :
+    issues.slice(0, 50).map(i => `<tr><td><code>${i.case_id}</code></td><td>${i.client}</td><td>${i.counsellor}</td><td style="color:#8C0303;">${i.issue}</td></tr>`).join('');
+}
+
+// ── Audit ─────────────────────────────────────────────────────────────────────
+async function loadAudit() {
+  const { data } = await db.from('session_audit_log').select('*').order('changed_at', { ascending: false }).limit(200);
+  const tbody = document.getElementById('auditBody');
+  if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="5" class="loading">No audit records.</td></tr>'; return; }
+  tbody.innerHTML = data.map(r => {
+    const caseId = r.new_data?.case_id || '—';
+    const user = allProfiles[r.changed_by]?.full_name || r.changed_by?.substring(0,8)+'…' || '—';
+    const when = r.changed_at ? new Date(r.changed_at).toLocaleString('en-SG') : '—';
+    return `<tr>
+      <td style="white-space:nowrap;font-size:11px;">${when}</td>
+      <td><span class="badge ${r.action === 'INSERT' ? 'badge-green' : 'badge-amber'}">${r.action}</span></td>
+      <td>${user}</td>
+      <td><code>${caseId}</code></td>
+      <td style="font-size:11px;"><code>${r.session_id?.substring(0,12)}…</code></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+async function exportData(type) {
+  const statusEl = document.getElementById('exportStatus');
+  statusEl.textContent = 'Preparing…';
+  const from = document.getElementById('expFrom').value;
+  const to = document.getElementById('expTo').value;
+  const counsellor = document.getElementById('expCounsellor').value;
+  let data, filename;
+
+  if (type === 'sessions') {
+    let q = db.from('sessions').select('*').order('session_date', { ascending: false });
+    if (from) q = q.gte('session_date', from);
+    if (to) q = q.lte('session_date', to);
+    if (counsellor) q = q.eq('counsellor_name', counsellor);
+    const res = await q; data = res.data || []; filename = `HS_PCT_Sessions_${today()}.csv`;
+  } else if (type === 'clients') {
+    const res = await db.from('clients').select('*').order('case_id');
+    data = res.data || []; filename = `HS_PCT_Clients_${today()}.csv`;
+  } else {
+    // Outcomes summary
+    const { data: sessions } = await db.from('sessions').select('case_id,counsellor_name,session_stage,session_date,sud_start,sud_end,risk_level,session_outcome,phq4_intake_total,phq4_closure_total,closure_reason,feedback_sent,red_flag');
+    data = sessions || []; filename = `HS_PCT_Outcomes_${today()}.csv`;
+  }
+
+  if (!data.length) { statusEl.textContent = 'No records to export.'; return; }
+  const headers = Object.keys(data[0]);
+  const rows = [headers.join(','), ...data.map(row => headers.map(h => {
+    const val = row[h] === null || row[h] === undefined ? '' : String(row[h]);
+    return (val.includes(',') || val.includes('\n') || val.includes('"')) ? '"' + val.replace(/"/g, '""') + '"' : val;
+  }).join(','))];
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  statusEl.textContent = `✓ Exported ${data.length} records — ${filename}`;
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+function riskBadge(risk) {
+  if (!risk) return '—';
+  const cls = risk === 'HIGH' ? 'badge-flag' : risk === 'MED-HIGH' ? 'badge-red' : risk === 'MEDIUM' ? 'badge-amber' : 'badge-gray';
+  return `<span class="badge ${cls}">${risk}</span>`;
+}
+
+window.onload = async function() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) {
+    const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+    if (profile?.role === 'admin') {
+      currentUser = session.user; currentProfile = profile;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('userBadge').textContent = profile.full_name + ' (Supervisor)';
+      await init();
+    }
+  }
+};
+</script>
+</body>
+</html>

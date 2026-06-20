@@ -472,7 +472,17 @@
   }
   .phq4-lang-tab:hover { background: #EDE8F8; }
   .phq4-lang-tab.active { background: #7B4FBB; border-color: #7B4FBB; color: white; }
-  .phq4-attribution {
+  .closure-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #D4E8D4;
+}
+.closure-check-item:last-child { border-bottom: none; }
+.chk-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.chk-label { font-size: 13px; font-weight: 600; color: var(--near-black); flex: 1; }
+.chk-status { font-size: 11px; flex-shrink: 0; margin-top: 2px; }
     font-size: 10px;
     color: var(--text-gray);
     margin-top: 12px;
@@ -1183,7 +1193,7 @@
       <div class="card-body">
         <div class="form-group" style="margin-bottom:12px;">
           <label>Reason for Closure</label>
-          <select id="closureReason">
+          <select id="closureReason" onchange="updateClosureChecklist()">
             <option value="">— Select reason —</option>
             <option>Resolved / Goals met</option>
             <option>Unresponsive — no contact after 3 attempts</option>
@@ -1207,40 +1217,40 @@
             <div class="phq4-q">
               <div class="phq4-q-text" id="phq4_closure_q1_text">1. Feeling nervous, anxious, or on edge</div>
               <div class="phq4-options" id="phq4c_q1_opts">
-                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure')">0</button>
-                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure')">1</button>
-                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure')">2</button>
-                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure')">3</button>
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure');updateClosureChecklist()">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure');updateClosureChecklist()">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure');updateClosureChecklist()">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q1_opts','phq4c_q1','closure');updateClosureChecklist()">3</button>
               </div>
               <input type="hidden" id="phq4c_q1" value="">
             </div>
             <div class="phq4-q">
               <div class="phq4-q-text" id="phq4_closure_q2_text">2. Not being able to stop or control worrying</div>
               <div class="phq4-options" id="phq4c_q2_opts">
-                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure')">0</button>
-                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure')">1</button>
-                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure')">2</button>
-                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure')">3</button>
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure');updateClosureChecklist()">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure');updateClosureChecklist()">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure');updateClosureChecklist()">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q2_opts','phq4c_q2','closure');updateClosureChecklist()">3</button>
               </div>
               <input type="hidden" id="phq4c_q2" value="">
             </div>
             <div class="phq4-q">
               <div class="phq4-q-text" id="phq4_closure_q3_text">3. Feeling down, depressed, or hopeless</div>
               <div class="phq4-options" id="phq4c_q3_opts">
-                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure')">0</button>
-                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure')">1</button>
-                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure')">2</button>
-                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure')">3</button>
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure');updateClosureChecklist()">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure');updateClosureChecklist()">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure');updateClosureChecklist()">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q3_opts','phq4c_q3','closure');updateClosureChecklist()">3</button>
               </div>
               <input type="hidden" id="phq4c_q3" value="">
             </div>
             <div class="phq4-q">
               <div class="phq4-q-text" id="phq4_closure_q4_text">4. Little interest or pleasure in doing things</div>
               <div class="phq4-options" id="phq4c_q4_opts">
-                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure')">0</button>
-                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure')">1</button>
-                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure')">2</button>
-                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure')">3</button>
+                <button type="button" class="phq4-opt" data-val="0" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure');updateClosureChecklist()">0</button>
+                <button type="button" class="phq4-opt" data-val="1" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure');updateClosureChecklist()">1</button>
+                <button type="button" class="phq4-opt" data-val="2" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure');updateClosureChecklist()">2</button>
+                <button type="button" class="phq4-opt" data-val="3" onclick="selectPHQ4(this,'phq4c_q4_opts','phq4c_q4','closure');updateClosureChecklist()">3</button>
               </div>
               <input type="hidden" id="phq4c_q4" value="">
             </div>
@@ -1250,15 +1260,103 @@
             <strong>PHQ-4</strong> © Developed by Drs. Robert L. Spitzer, Janet B.W. Williams, Kurt Kroenke and colleagues, with an educational grant from Pfizer Inc. No permission required to reproduce or distribute. © Template adapted for HealthServe Psychotherapy & Counselling Team use only.
           </div>
         </div>
-        <div class="form-group" style="margin-top:12px;">
-          <label>Feedback Form Sent?</label>
-          <div class="pill-group" id="feedbackPills">
-            <div class="pill outcome selected" data-val="Yes — sent to client" onclick="selectPill(this,'feedbackPills','feedbackSent')">Yes — sent</div>
-            <div class="pill outcome" data-val="Not yet" onclick="selectPill(this,'feedbackPills','feedbackSent')">Not yet</div>
-            <div class="pill outcome" data-val="Client declined" onclick="selectPill(this,'feedbackPills','feedbackSent')">Client declined</div>
+
+        <!-- ── Closure Checklist ─────────────────────────────────────── -->
+        <div style="background:#F0F7F0; border:1px solid #B8D4B8; border-radius:8px; padding:14px 16px; margin-top:16px;">
+          <div style="font-size:13px; font-weight:700; color:#2D5A2D; margin-bottom:12px;">✅ Closure Checklist — complete before generating output</div>
+
+          <!-- Individual checklist -->
+          <div id="closureChecklistIndividual">
+            <div class="closure-check-item" id="chk-reason">
+              <span class="chk-icon" id="chk-reason-icon">⬜</span>
+              <span class="chk-label">Closure reason selected</span>
+              <span class="chk-status" id="chk-reason-status" style="color:#999; font-size:11px;">pending</span>
+            </div>
+            <div class="closure-check-item" id="chk-phq4">
+              <span class="chk-icon" id="chk-phq4-icon">⬜</span>
+              <span class="chk-label">PHQ-4 closure scores completed</span>
+              <span class="chk-status" id="chk-phq4-status" style="color:#999; font-size:11px;">pending</span>
+            </div>
+            <div class="closure-check-item" id="chk-cs">
+              <span class="chk-icon" id="chk-cs-icon">⬜</span>
+              <span class="chk-label">Case Summary status</span>
+              <span class="chk-status" id="chk-cs-status" style="color:#999; font-size:11px;">pending</span>
+            </div>
+            <div class="closure-check-item">
+              <span class="chk-icon">📋</span>
+              <div style="flex:1;">
+                <div class="chk-label">Counselling Feedback Form — send to client via WhatsApp now</div>
+                <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; align-items:center;">
+                  <a href="https://forms.office.com/r/gj121ihLH3" target="_blank"
+                    class="btn btn-primary" style="font-size:12px; padding:5px 12px; text-decoration:none;">
+                    Open Feedback Form ↗
+                  </a>
+                  <div class="pill-group" id="feedbackPills" style="margin:0;">
+                    <div class="pill outcome selected" data-val="Sent to client" onclick="selectPill(this,'feedbackPills','feedbackSent');updateClosureChecklist()" style="font-size:11px; padding:4px 10px;">Sent</div>
+                    <div class="pill outcome" data-val="Client declined" onclick="selectPill(this,'feedbackPills','feedbackSent');updateClosureChecklist()" style="font-size:11px; padding:4px 10px;">Client declined</div>
+                    <div class="pill outcome" data-val="Not applicable" onclick="selectPill(this,'feedbackPills','feedbackSent');updateClosureChecklist()" style="font-size:11px; padding:4px 10px;">N/A</div>
+                  </div>
+                  <input type="hidden" id="feedbackSent" value="Sent to client">
+                </div>
+              </div>
+            </div>
+            <div class="closure-check-item">
+              <span class="chk-icon">🌟</span>
+              <div style="flex:1;">
+                <div class="chk-label">Client Testimonial — offer to client (all cases)</div>
+                <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; align-items:center;">
+                  <a href="https://forms.office.com/r/9sLNxUAV7C" target="_blank"
+                    class="btn" style="font-size:12px; padding:5px 12px; text-decoration:none; background:#FFCC00; color:#231F1F;">
+                    Open Testimonial Form ↗
+                  </a>
+                  <div class="pill-group" id="testimonialPills" style="margin:0;">
+                    <div class="pill outcome selected" data-val="Sent to client" onclick="selectPill(this,'testimonialPills','testimonialStatus');updateClosureChecklist()" style="font-size:11px; padding:4px 10px;">Sent</div>
+                    <div class="pill outcome" data-val="Completed with client" onclick="selectPill(this,'testimonialPills','testimonialStatus');updateClosureChecklist()" style="font-size:11px; padding:4px 10px;">Completed with client</div>
+                    <div class="pill outcome" data-val="Client declined" onclick="selectPill(this,'testimonialPills','testimonialStatus');updateClosureChecklist()" style="font-size:11px; padding:4px 10px;">Client declined</div>
+                  </div>
+                  <input type="hidden" id="testimonialStatus" value="Sent to client">
+                </div>
+              </div>
+            </div>
           </div>
-          <input type="hidden" id="feedbackSent" value="Yes — sent to client">
+
+          <!-- Group checklist -->
+          <div id="closureChecklistGroup" style="display:none;">
+            <div class="closure-check-item" id="chk-grp-reason">
+              <span class="chk-icon" id="chk-grp-reason-icon">⬜</span>
+              <span class="chk-label">Closure reason selected</span>
+              <span class="chk-status" id="chk-grp-reason-status" style="color:#999; font-size:11px;">pending</span>
+            </div>
+            <div class="closure-check-item" id="chk-grp-cs">
+              <span class="chk-icon" id="chk-grp-cs-icon">⬜</span>
+              <span class="chk-label">Case Summary status</span>
+              <span class="chk-status" id="chk-grp-cs-status" style="color:#999; font-size:11px;">pending</span>
+            </div>
+            <div class="closure-check-item">
+              <span class="chk-icon">📊</span>
+              <div style="flex:1;">
+                <div class="chk-label">Group Session Evaluation — complete now</div>
+                <div style="font-size:11px; color:#666; margin-top:2px;">To be completed by the counsellor for all group sessions</div>
+                <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; align-items:center;">
+                  <a href="https://forms.office.com/r/tHaKLAHq15" target="_blank"
+                    class="btn btn-primary" style="font-size:12px; padding:5px 12px; text-decoration:none;">
+                    Open Group Evaluation ↗
+                  </a>
+                  <div class="pill-group" id="groupEvalPills" style="margin:0;">
+                    <div class="pill outcome selected" data-val="Completed" onclick="selectPill(this,'groupEvalPills','groupEvalStatus');updateClosureChecklist()" style="font-size:11px; padding:4px 10px;">Completed</div>
+                    <div class="pill outcome" data-val="Not yet" onclick="selectPill(this,'groupEvalPills','groupEvalStatus');updateClosureChecklist()" style="font-size:11px; padding:4px 10px;">Not yet</div>
+                  </div>
+                  <input type="hidden" id="groupEvalStatus" value="Completed">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="closureChecklistWarning" style="display:none; margin-top:10px; padding:8px 12px; background:#FFF3CD; border-radius:6px; font-size:12px; color:#7A5800;">
+            ⚠️ Please complete all checklist items before generating output.
+          </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -2065,6 +2163,59 @@ GUIDELINES PER SECTION:
   btn.textContent = '✨ Regenerate Draft';
 }
 
+// ── Closure Checklist ─────────────────────────────────────────────────────────
+function updateClosureChecklist() {
+  const stage = document.getElementById('sessionStage').value;
+  if (stage !== 'Closure') return;
+
+  const isGroup = document.getElementById('sessionType').value === 'Group';
+  document.getElementById('closureChecklistIndividual').style.display = isGroup ? 'none' : 'block';
+  document.getElementById('closureChecklistGroup').style.display = isGroup ? 'block' : 'none';
+
+  if (!isGroup) {
+    // Reason
+    const reason = document.getElementById('closureReason').value;
+    const reasonOk = reason !== '';
+    document.getElementById('chk-reason-icon').textContent = reasonOk ? '✅' : '⬜';
+    document.getElementById('chk-reason-status').textContent = reasonOk ? reason : 'pending';
+    document.getElementById('chk-reason-status').style.color = reasonOk ? '#2D7A4F' : '#999';
+
+    // PHQ-4 closure
+    const phq4ok = ['phq4c_q1','phq4c_q2','phq4c_q3','phq4c_q4'].every(id => document.getElementById(id).value !== '');
+    document.getElementById('chk-phq4-icon').textContent = phq4ok ? '✅' : '⬜';
+    document.getElementById('chk-phq4-status').textContent = phq4ok ? 'complete' : 'pending';
+    document.getElementById('chk-phq4-status').style.color = phq4ok ? '#2D7A4F' : '#999';
+
+    // CS
+    const csRequired = document.getElementById('csRequired').value;
+    const csOk = csRequired === 'No' ||
+      (document.getElementById('cs_presenting').value.trim() &&
+       document.getElementById('cs_impression').value.trim() &&
+       document.getElementById('cs_plan').value.trim());
+    document.getElementById('chk-cs-icon').textContent = csOk ? '✅' : '⬜';
+    document.getElementById('chk-cs-status').textContent = csRequired === 'No' ? 'N/A — no CS required' : (csOk ? 'complete' : 'pending');
+    document.getElementById('chk-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
+
+  } else {
+    // Group: reason
+    const reason = document.getElementById('closureReason').value;
+    const reasonOk = reason !== '';
+    document.getElementById('chk-grp-reason-icon').textContent = reasonOk ? '✅' : '⬜';
+    document.getElementById('chk-grp-reason-status').textContent = reasonOk ? reason : 'pending';
+    document.getElementById('chk-grp-reason-status').style.color = reasonOk ? '#2D7A4F' : '#999';
+
+    // Group CS
+    const csRequired = document.getElementById('csRequired').value;
+    const csOk = csRequired === 'No' ||
+      (document.getElementById('cs_presenting').value.trim() &&
+       document.getElementById('cs_impression').value.trim() &&
+       document.getElementById('cs_plan').value.trim());
+    document.getElementById('chk-grp-cs-icon').textContent = csOk ? '✅' : '⬜';
+    document.getElementById('chk-grp-cs-status').textContent = csRequired === 'No' ? 'N/A' : (csOk ? 'complete' : 'pending');
+    document.getElementById('chk-grp-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
+  }
+}
+
 // ── CS toggle ────────────────────────────────────────────────────────────────────────────────────
 function toggleCS() {
   const val = document.getElementById('csRequired').value;
@@ -2474,6 +2625,7 @@ function generateOutput() {
     cs_case_closed:    document.getElementById('cs_case_closed') ? document.getElementById('cs_case_closed').checked : false,
     closure_reason:    stage === 'Closure' ? (document.getElementById('closureReason').value || null) : null,
     feedback_sent:     stage === 'Closure' ? (document.getElementById('feedbackSent').value || null) : null,
+    testimonial_status: stage === 'Closure' ? (document.getElementById('testimonialStatus') ? document.getElementById('testimonialStatus').value : null) : null,
   };
 
   db.from('sessions').insert(supabaseRecord).then(({ error: dbErr }) => {

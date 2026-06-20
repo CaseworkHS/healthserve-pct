@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthServe PCT — Staff</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--crimson:#8C0303;--crimson-dark:#6B0202;--gold:#FFCC00;--gray:#D7D7D7;--bg:#F7F5F3;--border:#E0D8D4;--near-black:#231F1F;--white:#FFFFFF;--green:#2D7A4F;--text-gray:#7F8080;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--near-black);font-size:14px;line-height:1.5;}
+.app-header{background:var(--crimson);color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.logo-text{font-size:18px;font-weight:700;}.logo-sub{font-size:11px;color:var(--gold);font-weight:600;}
+#loginScreen{display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--crimson);z-index:9999;align-items:center;justify-content:center;}
+.container{max-width:1100px;margin:0 auto;padding:20px 16px 60px;}
+.card{background:var(--white);border-radius:8px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.card-header{background:var(--crimson);color:white;padding:10px 16px;font-weight:600;font-size:13px;}
+.card-header.gold{background:var(--gold);color:var(--near-black);}
+.card-header.green{background:var(--green);color:white;}
+.card-body{padding:16px;}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--crimson);margin-bottom:20px;flex-wrap:wrap;}
+.tab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;color:var(--text-gray);background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;}
+.tab.active{color:var(--crimson);border-bottom-color:var(--crimson);background:var(--white);}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{background:var(--crimson);color:white;padding:8px 10px;text-align:left;font-weight:600;white-space:nowrap;}
+.data-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.data-table tr:hover td{background:#FDF8F8;}
+.table-scroll{overflow-x:auto;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+label{font-size:11px;font-weight:600;color:var(--crimson);text-transform:uppercase;letter-spacing:.4px;}
+input,select,textarea{border:1px solid var(--border);border-radius:5px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--near-black);background:white;}
+input:focus,select:focus{outline:none;border-color:var(--crimson);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;}
+.btn-primary{background:var(--crimson);color:white;}.btn-primary:hover{background:var(--crimson-dark);}
+.btn-gold{background:var(--gold);color:var(--near-black);}
+.btn-secondary{background:var(--gray);color:var(--near-black);}
+.btn-green{background:var(--green);color:white;}
+.btn-danger{background:#C62828;color:white;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.badge-green{background:#E8F5EE;color:#2D7A4F;}.badge-gray{background:#F5F5F5;color:#555;}.badge-amber{background:#FFF8E1;color:#7A5800;}.badge-red{background:#FFEBEE;color:#8C0303;}
+.alert{padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px;}
+.alert-info{background:#E3F2FD;border-left:3px solid #1976D2;color:#0D47A1;}
+.alert-warning{background:#FFF8E1;border-left:3px solid #F9A825;color:#6B4C00;}
+.alert-success{background:#E8F5EE;border-left:3px solid #2D7A4F;color:#1B5E3F;}
+.alert-danger{background:#FFEBEE;border-left:3px solid #8C0303;color:#7B0000;}
+.loading{text-align:center;padding:40px;color:var(--text-gray);font-size:13px;}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px;}
+.stat-box{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 16px;text-align:center;}
+.stat-box .num{font-size:26px;font-weight:700;color:var(--crimson);}
+.stat-box .lbl{font-size:11px;color:var(--text-gray);text-transform:uppercase;letter-spacing:.4px;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div style="width:100%;max-width:380px;padding:24px 20px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:24px;font-weight:700;color:white;">HealthServe</div>
+      <div style="font-size:11px;color:#FFCC00;letter-spacing:1.5px;font-weight:600;margin-top:2px;">PCT STAFF — CLIENT REGISTER</div>
+    </div>
+    <div style="background:white;border-radius:12px;padding:24px 20px;box-shadow:0 12px 40px rgba(0,0,0,.3);">
+      <div style="font-size:15px;font-weight:700;color:#231F1F;margin-bottom:4px;">Sign In</div>
+      <div style="font-size:12px;color:#7F8080;margin-bottom:16px;">Case register management — staff access.</div>
+      <div class="form-group" style="margin-bottom:12px;"><label>Email</label><input type="email" id="loginEmail" autocomplete="email"></div>
+      <div class="form-group" style="margin-bottom:4px;"><label>Password</label><input type="password" id="loginPassword" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="loginError" style="display:none;color:#8C0303;font-size:12px;margin:8px 0 4px;font-weight:600;"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;justify-content:center;" onclick="doLogin()" id="loginBtn">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-header">
+  <div><div class="logo-text">HealthServe</div><div class="logo-sub">PCT STAFF — CLIENT REGISTER</div></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="userBadge" style="font-size:12px;color:var(--gold);font-weight:600;"></span>
+    <button class="btn" style="font-size:11px;background:rgba(255,255,255,.15);color:white;padding:4px 10px;" onclick="doLogout()">Sign out</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('register',this)">👤 Client Register</button>
+    <button class="tab" onclick="showTab('add',this)">➕ Add / Edit Case</button>
+    <button class="tab" onclick="showTab('bulk',this)">📤 Bulk Upload</button>
+    <button class="tab" onclick="showTab('close',this)">🔒 Close Cases</button>
+    <button class="tab" onclick="showTab('audit',this)">🔍 My Audit Log</button>
+  </div>
+
+  <!-- CLIENT REGISTER -->
+  <div id="tab-register" class="tab-panel">
+    <div class="stats-row" id="registerStats">
+      <div class="stat-box"><div class="num" id="st-active">—</div><div class="lbl">Active Cases</div></div>
+      <div class="stat-box"><div class="num" id="st-closed">—</div><div class="lbl">Closed This Year</div></div>
+      <div class="stat-box"><div class="num" id="st-new">—</div><div class="lbl">New This Month</div></div>
+      <div class="stat-box"><div class="num" id="st-total">—</div><div class="lbl">Total Cases</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Active Cases</div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group" style="flex:1;min-width:200px;">
+            <label>Search</label>
+            <input type="text" id="regSearch" placeholder="Name, case ID, counsellor…" oninput="filterRegister()">
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="regStatus" onchange="filterRegister()">
+              <option value="Active">Active</option>
+              <option value="Closed">Closed</option>
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Counsellor</label>
+            <select id="regCounsellor" onchange="filterRegister()">
+              <option value="">All</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" id="registerTable">
+            <thead><tr><th>Case ID</th><th>Name</th><th>Counsellor</th><th>Status</th><th>Issue</th><th>Risk</th><th>Stage</th><th>Sessions</th><th>Last Session</th><th>Actions</th></tr></thead>
+            <tbody id="registerBody"><tr><td colspan="10" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT CASE -->
+  <div id="tab-add" class="tab-panel" style="display:none;">
+    <div class="card">
+      <div class="card-header gold">Add or Update Client Record</div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:14px;">
+          To update an existing case, enter the Case ID — existing values will be overwritten with what you enter here.
+          Leave fields blank to keep existing values when updating.
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Case ID *</label><input type="text" id="nc-caseId" placeholder="e.g. CI-2026-047"></div>
+          <div class="form-group"><label>Client Name *</label><input type="text" id="nc-name" placeholder="Full name"></div>
+          <div class="form-group"><label>Assigned Counsellor *</label><select id="nc-counsellor"><option value="">— Select —</option></select></div>
+          <div class="form-group"><label>Case Type</label><select id="nc-type"><option value="Individual">Individual</option><option value="Group">Group</option></select></div>
+          <div class="form-group"><label>Presenting Issue</label><input type="text" id="nc-issue" placeholder="e.g. Work Injury / WICA"></div>
+          <div class="form-group"><label>Risk Level (Initial)</label><select id="nc-risk"><option value="">—</option><option>LOW</option><option>LOW-MED</option><option>MEDIUM</option><option>MED-HIGH</option><option>HIGH</option></select></div>
+          <div class="form-group"><label>Nationality</label><input type="text" id="nc-nationality" placeholder="e.g. Bangladesh"></div>
+          <div class="form-group"><label>Language</label><input type="text" id="nc-language" placeholder="e.g. Bengali"></div>
+          <div class="form-group"><label>Referral Source</label><input type="text" id="nc-referral" placeholder="e.g. Ext - MOM/ANT"></div>
+          <div class="form-group"><label>Location / Dormitory</label><input type="text" id="nc-location" placeholder="e.g. Tuas View Dorm"></div>
+          <div class="form-group"><label>Stage</label><select id="nc-stage"><option>Intake</option><option>Progress</option><option>Closure</option></select></div>
+          <div class="form-group"><label>CS Required?</label><select id="nc-cs"><option value="false">No</option><option value="true">Yes</option></select></div>
+          <div class="form-group"><label>Date Opened</label><input type="date" id="nc-opened"></div>
+          <div class="form-group"><label>Referral Notes</label><input type="text" id="nc-notes" placeholder="Brief reason for referral"></div>
+        </div>
+        <div id="addMsg" style="display:none;margin-top:12px;" class="alert"></div>
+        <div style="margin-top:14px;display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="saveCase()">Save Case</button>
+          <button class="btn btn-secondary" onclick="clearCaseForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BULK UPLOAD -->
+  <div id="tab-bulk" class="tab-panel" style="display:none;">
+    <div class="card">
+      <div class="card-header">Bulk Upload from CSV</div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:14px;">
+          Upload multiple cases from a CSV file. Download the template first, fill it in, then upload.
+          Existing cases (matched by Case ID) will be updated; new Case IDs will be created.
+          <strong>Do not include FIN numbers or contact details in this file.</strong>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          <button class="btn btn-gold" onclick="downloadTemplate()">⬇ Download CSV Template</button>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Upload CSV File</label>
+          <input type="file" id="csvFile" accept=".csv" onchange="previewCSV(this)">
+        </div>
+        <div id="csvPreview" style="display:none;">
+          <div class="alert alert-warning" id="csvWarning" style="display:none;"></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;" id="csvSummary"></div>
+          <div class="table-scroll">
+            <table class="data-table" id="csvPreviewTable">
+              <thead><tr id="csvHeaders"></tr></thead>
+              <tbody id="csvRows"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px;">
+            <button class="btn btn-primary" id="uploadBtn" onclick="uploadCSV()">⬆ Upload All Cases</button>
+            <button class="btn btn-secondary" onclick="clearCSV()">Clear</button>
+          </div>
+        </div>
+        <div id="uploadStatus" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLOSE CASES -->
+  <div id="tab-close" class="tab-panel" style="display:none;">
+    <div class="card">
+      <div class="card-header" style="background:#4A6741;color:white;">Close a Case</div>
+      <div class="card-body">
+        <div class="alert alert-warning" style="margin-bottom:14px;">
+          Closing a case marks it as Closed, hides it from counsellor dropdowns, and starts the 5-year retention clock.
+          Only close cases where counselling has genuinely ended. This action can be reversed by Durga if needed.
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;min-width:200px;">
+            <label>Search Active Case to Close</label>
+            <input type="text" id="closeSearch" placeholder="Name or Case ID…" oninput="filterCloseList()">
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Case ID</th><th>Name</th><th>Counsellor</th><th>Stage</th><th>Sessions</th><th>Last Session</th><th>Action</th></tr></thead>
+            <tbody id="closeBody"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div id="closeMsg" style="display:none;margin-top:12px;" class="alert"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIT LOG -->
+  <div id="tab-audit" class="tab-panel" style="display:none;">
+    <div class="alert alert-info">Shows only changes made by you to client records.</div>
+    <div class="card">
+      <div class="card-header">My Recent Actions</div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>When</th><th>Action</th><th>Case ID</th><th>Name</th></tr></thead>
+            <tbody id="myAuditBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL      = 'https://vnwtzejhhvlvxiuqgihe.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZud3R6ZWpoaHZsdnhpdXFnaWhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDUzMjAsImV4cCI6MjA5NzQyMTMyMH0.8J70HGsS5aExwETYSYJsy772UH6mVpVLeHIM8MJOsH4';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null, currentProfile = null;
+let allClients = [], allProfiles = [], parsedCSV = [];
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.style.display = 'none'; btn.textContent = 'Signing in…'; btn.disabled = true;
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+  if (error) { errEl.textContent = 'Incorrect email or password.'; errEl.style.display = 'block'; btn.textContent = 'Sign In'; btn.disabled = false; return; }
+  const { data: profile } = await db.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
+  if (!profile || profile.role !== 'admin') {
+    await db.auth.signOut();
+    errEl.textContent = 'Staff access only. Contact Durga.';
+    errEl.style.display = 'block'; btn.textContent = 'Sign In'; btn.disabled = false; return;
+  }
+  currentUser = data.user; currentProfile = profile;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('userBadge').textContent = profile.full_name;
+  await init();
+}
+async function doLogout() { await db.auth.signOut(); location.reload(); }
+
+async function init() {
+  const { data: profiles } = await db.from('profiles').select('id,full_name,role,staff_type').eq('is_active', true);
+  allProfiles = profiles || [];
+  const { data: clients } = await db.from('clients').select('*').order('case_id');
+  allClients = clients || [];
+
+  const counsellors = [...new Set(allProfiles.map(p => p.full_name))].sort();
+  ['nc-counsellor','regCounsellor'].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    counsellors.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+  });
+
+  updateStats();
+  renderRegister(allClients.filter(c => c.status === 'Active'));
+  renderCloseList(allClients.filter(c => c.status === 'Active'));
+  await loadMyAudit();
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).style.display = 'block';
+  btn.classList.add('active');
+}
+
+function updateStats() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const yearStart = `${now.getFullYear()}-01-01`;
+  document.getElementById('st-active').textContent = allClients.filter(c => c.status === 'Active').length;
+  document.getElementById('st-closed').textContent = allClients.filter(c => c.status === 'Closed' && c.closed_at >= yearStart).length;
+  document.getElementById('st-new').textContent = allClients.filter(c => c.created_at >= monthStart).length;
+  document.getElementById('st-total').textContent = allClients.length;
+}
+
+// ── Register ──────────────────────────────────────────────────────────────────
+function renderRegister(clients) {
+  const tbody = document.getElementById('registerBody');
+  if (!clients.length) { tbody.innerHTML = '<tr><td colspan="10" class="loading">No cases found.</td></tr>'; return; }
+  tbody.innerHTML = clients.map(c => `<tr>
+    <td><code>${c.case_id}</code></td>
+    <td><strong>${c.name}</strong></td>
+    <td>${c.counsellor_name}</td>
+    <td><span class="badge ${c.status === 'Active' ? 'badge-green' : 'badge-gray'}">${c.status}</span></td>
+    <td style="font-size:11px;">${c.issue||'—'}</td>
+    <td>${riskBadge(c.risk_level)}</td>
+    <td>${c.stage||'—'}</td>
+    <td style="text-align:center;">${c.total_sessions}</td>
+    <td style="font-size:11px;">${c.last_session_date||'—'}</td>
+    <td><button class="btn btn-secondary" style="padding:3px 8px;font-size:11px;" onclick="editCase('${c.case_id}')">Edit</button></td>
+  </tr>`).join('');
+}
+
+function filterRegister() {
+  const q = document.getElementById('regSearch').value.toLowerCase();
+  const status = document.getElementById('regStatus').value;
+  const counsellor = document.getElementById('regCounsellor').value;
+  const filtered = allClients.filter(c =>
+    (!status || c.status === status) &&
+    (!counsellor || c.counsellor_name === counsellor) &&
+    (!q || c.name.toLowerCase().includes(q) || c.case_id.toLowerCase().includes(q) || (c.counsellor_name||'').toLowerCase().includes(q))
+  );
+  renderRegister(filtered);
+}
+
+// ── Add / Edit Case ───────────────────────────────────────────────────────────
+function editCase(caseId) {
+  const c = allClients.find(x => x.case_id === caseId);
+  if (!c) return;
+  showTab('add', document.querySelectorAll('.tab')[1]);
+  document.getElementById('nc-caseId').value = c.case_id;
+  document.getElementById('nc-name').value = c.name;
+  document.getElementById('nc-counsellor').value = c.counsellor_name;
+  document.getElementById('nc-type').value = c.case_type;
+  document.getElementById('nc-issue').value = c.issue || '';
+  document.getElementById('nc-risk').value = c.risk_level || '';
+  document.getElementById('nc-nationality').value = c.nationality || '';
+  document.getElementById('nc-language').value = c.language || '';
+  document.getElementById('nc-referral').value = c.referral || '';
+  document.getElementById('nc-location').value = c.location || '';
+  document.getElementById('nc-stage').value = c.stage || 'Intake';
+  document.getElementById('nc-cs').value = c.cs_required ? 'true' : 'false';
+}
+
+async function saveCase() {
+  const msgEl = document.getElementById('addMsg');
+  const caseId = document.getElementById('nc-caseId').value.trim().toUpperCase();
+  const name = document.getElementById('nc-name').value.trim();
+  const counsellorName = document.getElementById('nc-counsellor').value;
+  if (!caseId || !name || !counsellorName) {
+    msgEl.className = 'alert alert-danger'; msgEl.textContent = 'Case ID, Name and Counsellor are required.'; msgEl.style.display = 'block'; return;
+  }
+  const profile = allProfiles.find(p => p.full_name === counsellorName);
+  const record = {
+    case_id: caseId, name, counsellor_name: counsellorName,
+    assigned_to: profile?.id || null,
+    case_type: document.getElementById('nc-type').value,
+    issue: document.getElementById('nc-issue').value || null,
+    risk_level: document.getElementById('nc-risk').value || null,
+    nationality: document.getElementById('nc-nationality').value || null,
+    language: document.getElementById('nc-language').value || null,
+    referral: document.getElementById('nc-referral').value || null,
+    location: document.getElementById('nc-location').value || null,
+    stage: document.getElementById('nc-stage').value,
+    cs_required: document.getElementById('nc-cs').value === 'true',
+    status: 'Active',
+  };
+  const { error } = await db.from('clients').upsert(record, { onConflict: 'case_id' });
+  if (error) {
+    msgEl.className = 'alert alert-danger'; msgEl.textContent = 'Save failed: ' + error.message;
+  } else {
+    msgEl.className = 'alert alert-success'; msgEl.textContent = `✓ Case ${caseId} saved successfully.`;
+    const { data } = await db.from('clients').select('*').order('case_id');
+    allClients = data || [];
+    filterRegister(); renderCloseList(allClients.filter(c => c.status === 'Active')); updateStats();
+  }
+  msgEl.style.display = 'block';
+}
+
+function clearCaseForm() {
+  ['nc-caseId','nc-name','nc-issue','nc-nationality','nc-language','nc-referral','nc-location'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('nc-counsellor').value = '';
+  document.getElementById('nc-type').value = 'Individual';
+  document.getElementById('nc-risk').value = '';
+  document.getElementById('nc-stage').value = 'Intake';
+  document.getElementById('nc-cs').value = 'false';
+  document.getElementById('addMsg').style.display = 'none';
+}
+
+// ── Bulk Upload ───────────────────────────────────────────────────────────────
+function downloadTemplate() {
+  const headers = ['case_id','name','counsellor_name','case_type','issue','risk_level','nationality','language','referral','location','stage','cs_required'];
+  const example = ['CI-2026-047','Client Name','Bobby','Individual','Work Injury / WICA','LOW','Bangladesh','Bengali','Ext - MOM/ANT','Tuas View Dorm','Intake','false'];
+  const csv = [headers.join(','), example.join(',')].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'HS_PCT_Client_Upload_Template.csv'; a.click();
+}
+
+function previewCSV(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const lines = text.trim().split('\n').map(l => l.split(',').map(v => v.trim().replace(/^"|"$/g,'')));
+    const headers = lines[0];
+    const rows = lines.slice(1).filter(r => r.length > 1 && r[0]);
+    parsedCSV = rows.map(r => { const obj = {}; headers.forEach((h,i) => obj[h] = r[i]||''); return obj; });
+
+    const warnings = [];
+    parsedCSV.forEach((r,i) => {
+      if (!r.case_id) warnings.push(`Row ${i+2}: Missing Case ID`);
+      if (!r.name) warnings.push(`Row ${i+2}: Missing Name`);
+      if (!r.counsellor_name) warnings.push(`Row ${i+2}: Missing Counsellor`);
+    });
+
+    document.getElementById('csvSummary').textContent = `${parsedCSV.length} cases found in file.`;
+    const warnEl = document.getElementById('csvWarning');
+    if (warnings.length) { warnEl.textContent = warnings.join(' | '); warnEl.style.display = 'block'; }
+    else { warnEl.style.display = 'none'; }
+
+    document.getElementById('csvHeaders').innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+    document.getElementById('csvRows').innerHTML = parsedCSV.slice(0,5).map(r => `<tr>${headers.map(h => `<td>${r[h]||''}</td>`).join('')}</tr>`).join('');
+    if (parsedCSV.length > 5) document.getElementById('csvRows').innerHTML += `<tr><td colspan="${headers.length}" style="color:var(--text-gray);font-style:italic;">… and ${parsedCSV.length - 5} more rows</td></tr>`;
+    document.getElementById('csvPreview').style.display = 'block';
+  };
+  reader.readAsText(file);
+}
+
+async function uploadCSV() {
+  if (!parsedCSV.length) return;
+  const btn = document.getElementById('uploadBtn');
+  const statusEl = document.getElementById('uploadStatus');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  let success = 0, failed = 0, errors = [];
+
+  for (const r of parsedCSV) {
+    if (!r.case_id || !r.name || !r.counsellor_name) { failed++; continue; }
+    const profile = allProfiles.find(p => p.full_name === r.counsellor_name);
+    const record = {
+      case_id: r.case_id.toUpperCase(), name: r.name,
+      counsellor_name: r.counsellor_name, assigned_to: profile?.id || null,
+      case_type: r.case_type || 'Individual',
+      issue: r.issue || null, risk_level: r.risk_level || null,
+      nationality: r.nationality || null, language: r.language || null,
+      referral: r.referral || null, location: r.location || null,
+      stage: r.stage || 'Intake', cs_required: r.cs_required === 'true',
+      status: 'Active',
+    };
+    const { error } = await db.from('clients').upsert(record, { onConflict: 'case_id' });
+    if (error) { failed++; errors.push(`${r.case_id}: ${error.message}`); } else { success++; }
+  }
+
+  const { data } = await db.from('clients').select('*').order('case_id');
+  allClients = data || [];
+  filterRegister(); renderCloseList(allClients.filter(c => c.status === 'Active')); updateStats();
+
+  const msgClass = failed ? 'alert-warning' : 'alert-success';
+  statusEl.innerHTML = `<div class="alert ${msgClass}">✓ ${success} cases uploaded successfully.${failed ? ` ${failed} failed.` : ''}${errors.length ? '<br>' + errors.slice(0,3).join('<br>') : ''}</div>`;
+  btn.disabled = false; btn.textContent = '⬆ Upload All Cases';
+}
+
+function clearCSV() {
+  parsedCSV = [];
+  document.getElementById('csvFile').value = '';
+  document.getElementById('csvPreview').style.display = 'none';
+  document.getElementById('uploadStatus').innerHTML = '';
+}
+
+// ── Close Cases ───────────────────────────────────────────────────────────────
+function renderCloseList(clients) {
+  const tbody = document.getElementById('closeBody');
+  if (!clients.length) { tbody.innerHTML = '<tr><td colspan="7" class="loading">No active cases.</td></tr>'; return; }
+  tbody.innerHTML = clients.map(c => `<tr>
+    <td><code>${c.case_id}</code></td>
+    <td>${c.name}</td>
+    <td>${c.counsellor_name}</td>
+    <td>${c.stage||'—'}</td>
+    <td style="text-align:center;">${c.total_sessions}</td>
+    <td>${c.last_session_date||'—'}</td>
+    <td><button class="btn btn-danger" style="padding:3px 10px;font-size:11px;" onclick="confirmClose('${c.case_id}','${c.name.replace(/'/g,"\\'")}')">Close Case</button></td>
+  </tr>`).join('');
+}
+
+function filterCloseList() {
+  const q = document.getElementById('closeSearch').value.toLowerCase();
+  const filtered = allClients.filter(c => c.status === 'Active' && (c.name.toLowerCase().includes(q) || c.case_id.toLowerCase().includes(q)));
+  renderCloseList(filtered);
+}
+
+async function confirmClose(caseId, name) {
+  if (!confirm(`Close case ${caseId} — ${name}?\n\nThis will mark the case as Closed and start the 5-year retention period. The counsellor will no longer see this case in their session form.\n\nThis can be reversed by Durga if needed.`)) return;
+  const { error } = await db.from('clients').update({ status: 'Closed', closed_at: new Date().toISOString() }).eq('case_id', caseId);
+  const msgEl = document.getElementById('closeMsg');
+  if (error) {
+    msgEl.className = 'alert alert-danger'; msgEl.textContent = 'Error: ' + error.message;
+  } else {
+    msgEl.className = 'alert alert-success'; msgEl.textContent = `✓ Case ${caseId} (${name}) closed successfully.`;
+    const { data } = await db.from('clients').select('*').order('case_id');
+    allClients = data || [];
+    filterCloseList(); filterRegister(); updateStats();
+  }
+  msgEl.style.display = 'block';
+}
+
+// ── My Audit Log ──────────────────────────────────────────────────────────────
+async function loadMyAudit() {
+  // Show recent client changes — since staff page doesn't touch sessions, track via clients updated_at
+  const { data } = await db.from('clients').select('case_id,name,status,updated_at,created_at').order('updated_at', { ascending: false }).limit(50);
+  const tbody = document.getElementById('myAuditBody');
+  if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="4" class="loading">No recent changes.</td></tr>'; return; }
+  tbody.innerHTML = data.map(r => `<tr>
+    <td style="white-space:nowrap;font-size:11px;">${new Date(r.updated_at).toLocaleString('en-SG')}</td>
+    <td><span class="badge ${r.status === 'Active' ? 'badge-green' : 'badge-gray'}">${r.status}</span></td>
+    <td><code>${r.case_id}</code></td>
+    <td>${r.name}</td>
+  </tr>`).join('');
+}
+
+function riskBadge(risk) {
+  if (!risk) return '—';
+  const cls = risk === 'HIGH' ? 'badge-red' : risk === 'MED-HIGH' ? 'badge-red' : risk === 'MEDIUM' ? 'badge-amber' : 'badge-gray';
+  return `<span class="badge ${cls}">${risk}</span>`;
+}
+
+window.onload = async function() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) {
+    const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+    if (profile?.role === 'admin') {
+      currentUser = session.user; currentProfile = profile;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('userBadge').textContent = profile.full_name;
+      await init();
+    }
+  }
+};
+</script>
+</body>
+</html>
