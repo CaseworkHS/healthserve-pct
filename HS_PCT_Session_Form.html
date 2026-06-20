@@ -2030,7 +2030,10 @@ function updateClosureChecklist() {
   const stage = document.getElementById('sessionStage').value;
   if (stage !== 'Closure') return;
 
-  const isGroup = document.getElementById('sessionType').value === 'Group';
+  // Read session type from the hidden input (set by pill selection)
+  const sessionTypeEl = document.getElementById('sessionType');
+  const isGroup = sessionTypeEl && sessionTypeEl.value === 'Group';
+
   document.getElementById('closureChecklistIndividual').style.display = isGroup ? 'none' : 'block';
   document.getElementById('closureChecklistGroup').style.display = isGroup ? 'block' : 'none';
 
@@ -2042,25 +2045,29 @@ function updateClosureChecklist() {
     document.getElementById('chk-reason-status').textContent = reasonOk ? reason : 'pending';
     document.getElementById('chk-reason-status').style.color = reasonOk ? '#2D7A4F' : '#999';
 
-    // PHQ-4 closure — check all 4 hidden inputs have values
+    // PHQ-4 closure
     const phq4ok = ['phq4c_q1','phq4c_q2','phq4c_q3','phq4c_q4']
       .every(id => { const el = document.getElementById(id); return el && el.value !== ''; });
     document.getElementById('chk-phq4-icon').textContent = phq4ok ? '✅' : '⬜';
     document.getElementById('chk-phq4-status').textContent = phq4ok ? 'complete' : 'pending';
     document.getElementById('chk-phq4-status').style.color = phq4ok ? '#2D7A4F' : '#999';
 
-    // CS status
+    // CS status — hide entire row if CS not required
     const csRequired = document.getElementById('csRequired').value;
-    const csEl1 = document.getElementById('cs_presenting');
-    const csEl2 = document.getElementById('cs_impression');
-    const csEl3 = document.getElementById('cs_plan');
-    const csOk = csRequired !== 'Yes' ||
-      (csEl1 && csEl1.value.trim() && csEl2 && csEl2.value.trim() && csEl3 && csEl3.value.trim());
-    document.getElementById('chk-cs-icon').textContent = csOk ? '✅' : '⬜';
-    document.getElementById('chk-cs-status').textContent = csRequired !== 'Yes'
-      ? 'N/A — no CS required'
-      : (csOk ? 'complete' : 'pending — fill in Screen 3');
-    document.getElementById('chk-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
+    const chkCsRow = document.getElementById('chk-cs');
+    if (csRequired !== 'Yes') {
+      // CS not required — hide this checklist item entirely
+      if (chkCsRow) chkCsRow.style.display = 'none';
+    } else {
+      if (chkCsRow) chkCsRow.style.display = 'flex';
+      const csEl1 = document.getElementById('cs_presenting');
+      const csEl2 = document.getElementById('cs_impression');
+      const csEl3 = document.getElementById('cs_plan');
+      const csOk = csEl1 && csEl1.value.trim() && csEl2 && csEl2.value.trim() && csEl3 && csEl3.value.trim();
+      document.getElementById('chk-cs-icon').textContent = csOk ? '✅' : '⬜';
+      document.getElementById('chk-cs-status').textContent = csOk ? 'complete' : 'pending — fill in Screen 3';
+      document.getElementById('chk-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
+    }
 
   } else {
     // Group: closure reason
@@ -2070,14 +2077,20 @@ function updateClosureChecklist() {
     document.getElementById('chk-grp-reason-status').textContent = reasonOk ? reason : 'pending';
     document.getElementById('chk-grp-reason-status').style.color = reasonOk ? '#2D7A4F' : '#999';
 
-    // Group CS
+    // Group CS — also hide if not required
     const csRequired = document.getElementById('csRequired').value;
-    const csEl1 = document.getElementById('cs_presenting');
-    const csEl2 = document.getElementById('cs_impression');
-    const csOk = csRequired !== 'Yes' || (csEl1 && csEl1.value.trim() && csEl2 && csEl2.value.trim());
-    document.getElementById('chk-grp-cs-icon').textContent = csOk ? '✅' : '⬜';
-    document.getElementById('chk-grp-cs-status').textContent = csRequired !== 'Yes' ? 'N/A' : (csOk ? 'complete' : 'pending');
-    document.getElementById('chk-grp-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
+    const chkGrpCs = document.getElementById('chk-grp-cs');
+    if (csRequired !== 'Yes') {
+      if (chkGrpCs) chkGrpCs.style.display = 'none';
+    } else {
+      if (chkGrpCs) chkGrpCs.style.display = 'flex';
+      const csEl1 = document.getElementById('cs_presenting');
+      const csEl2 = document.getElementById('cs_impression');
+      const csOk = csEl1 && csEl1.value.trim() && csEl2 && csEl2.value.trim();
+      document.getElementById('chk-grp-cs-icon').textContent = csOk ? '✅' : '⬜';
+      document.getElementById('chk-grp-cs-status').textContent = csOk ? 'complete' : 'pending';
+      document.getElementById('chk-grp-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
+    }
   }
 }
 
