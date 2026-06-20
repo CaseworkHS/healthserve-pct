@@ -1429,22 +1429,7 @@
     <div class="card">
       <div class="card-header blue">Case Summary — for referrer</div>
       <div class="card-body">
-        <div class="cs-note">Write in plain language. The referrer is not a clinician. Aim for 2–4 sentences per field. This will be included in the email automatically — no copy-paste needed.</div>
-
-        <!-- AI Draft Button -->
-        <div style="background:#F0F4FF; border:1px solid #C5D0F0; border-radius:8px; padding:12px 14px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div>
-            <div style="font-size:13px; font-weight:600; color:#2D4580;">✨ AI-assisted CS Draft</div>
-            <div style="font-size:12px; color:#5566AA; margin-top:2px;">Reads your session notes and generates a plain-language draft. Review and edit before sending.</div>
-          </div>
-          <button class="btn" id="generateCSBtn"
-            style="background:#2D4580; color:white; white-space:nowrap; flex-shrink:0;"
-            onclick="generateCSDraft()">✨ Generate Draft</button>
-        </div>
-        <div id="csGenStatus" style="display:none; font-size:12px; color:#5566AA; margin-bottom:12px; padding:8px 12px; background:#F0F4FF; border-radius:6px;">
-          ⏳ Generating draft — usually takes 5–10 seconds…
-        </div>
-        <div id="csGenError" style="display:none;" class="alert alert-danger"></div>
+        <div class="cs-note">Write in plain language. The referrer is not a clinician. Aim for 2–4 sentences per field. Follow-up date is auto-filled from your session notes.</div>
 
         <div class="form-grid full" style="gap:14px;">
           <div class="form-group">
@@ -1492,39 +1477,46 @@
     🚨 <strong>RED FLAG SESSION</strong> — Contact Durga immediately after sending this email.
   </div>
 
+  <!-- Step guide -->
+  <div style="background:#FFF8E1; border:1px solid #FFCC00; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px;">
+    <div style="font-weight:700; color:#6B4C00; margin-bottom:6px;">Complete these steps in order:</div>
+    <div style="color:#5A3E00; line-height:2;">
+      <strong>1.</strong> Save CR as PDF → upload to your Teams <em>CR folder</em><br>
+      <strong>2.</strong> If CS required — Save CS as PDF → upload to your Teams <em>CS folder</em><br>
+      <strong>3.</strong> Send Email to HealthServe (opens your email app pre-filled)
+    </div>
+  </div>
+
   <div class="card">
-    <div class="card-header">Session Record Block (CR)</div>
+    <div class="card-header">① Counselling Report (CR) — Internal record</div>
     <div class="card-body">
-      <div class="alert alert-info">Save the CR as a PDF using the button below and upload it to your Teams CR folder.</div>
       <div class="output-block" id="crOutput"></div>
-      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-        <button class="copy-btn" onclick="copyText('crOutput', this)">⍘ Copy CR Block</button>
-        <button class="copy-btn" style="background:#2D7A4F; color:white; border-color:#2D7A4F;" onclick="saveSectionAsPDF('crOutput','Session_Record')">&#x2B07; Save CR as PDF</button>
+      <div style="margin-top:10px;">
+        <button class="btn btn-primary" onclick="saveSectionAsPDF('crOutput','Session_Record')">⬇ Save CR as PDF</button>
+        <button class="btn btn-secondary" style="margin-left:8px;" onclick="copyText('crOutput', this)">⍘ Copy text</button>
       </div>
     </div>
   </div>
 
   <div class="card" id="csOutputCard" style="display:none;">
-    <div class="card-header gold">Case Summary for Referrer</div>
+    <div class="card-header gold">② Case Summary (CS) — For referrer</div>
     <div class="card-body">
-      <div class="alert alert-info">Save the CS as a PDF using the button below and upload it to your Teams CS folder. This report will also be emailed to the Counselling team automatically.</div>
       <div class="output-block" id="csOutput"></div>
-      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-        <button class="copy-btn" onclick="copyText('csOutput', this)">≈ Copy CS</button>
-        <button class="copy-btn" style="background:#2D7A4F; color:white; border-color:#2D7A4F;" onclick="saveSectionAsPDF('csOutput','Case_Summary')">&#x2B07; Save CS as PDF</button>
+      <div style="margin-top:10px;">
+        <button class="btn btn-gold" onclick="saveSectionAsPDF('csOutput','Case_Summary')" style="color:#231F1F;">⬇ Save CS as PDF</button>
+        <button class="btn btn-secondary" style="margin-left:8px;" onclick="copyText('csOutput', this)">⍘ Copy text</button>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header">Send &amp; Log</div>
+    <div class="card-header" style="background:#2D5A2D; color:white;">③ Send Email to HealthServe</div>
     <div class="card-body">
-      <div class="alert alert-warning" style="margin-bottom:12px;">
-        Click <strong>Send Email</strong> below. The email will open pre-filled with the session record and Case Summary (if applicable) — addressed to <strong>mentalhealth@healthserve.org.sg</strong> with Durga CC'd. Then update the Sessions Log in the Excel CRM.
+      <div class="alert alert-info" style="margin-bottom:12px;">
+        Opens your email app with the session record pre-filled, addressed to <strong>mentalhealth@healthserve.org.sg</strong>. Send this after saving your PDFs.
       </div>
-      <div class="btn-row" style="border:none; padding:0; margin:0;">
-        <button class="btn btn-success" onclick="sendEmail()">✉ Send Email to HealthServe</button>
-        <button class="btn btn-secondary" onclick="saveAsPDF()">⬇ Save as PDF</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="sendEmail()" style="background:#2D5A2D;">✉ Send Email to HealthServe</button>
         <button class="btn btn-secondary" onclick="startNew()">+ New Session</button>
         <button class="btn btn-secondary" onclick="printOutput()">⎙ Print</button>
       </div>
@@ -1759,6 +1751,21 @@ function validateScreen2() {
     alert('Please complete the following before continuing:\n\n' + errors.join('\n') + '\n\nScroll up to find any missing fields.');
     return;
   }
+
+  // Auto-fill cs_next_contact from follow-up date/mode if not already filled
+  const fuDate = document.getElementById('followUpDate').value;
+  const fuMode = document.getElementById('followUpMode').value;
+  const noFU   = document.getElementById('noFollowUp').checked;
+  const csNext = document.getElementById('cs_next_contact');
+  if (csNext && !csNext.value) {
+    if (noFU) {
+      csNext.value = 'No follow-up required';
+    } else if (fuDate) {
+      const fuFormatted = new Date(fuDate).toLocaleDateString('en-SG', { day:'2-digit', month:'short', year:'numeric' });
+      csNext.value = fuFormatted + (fuMode ? ' — ' + fuMode : '');
+    }
+  }
+
   goToScreen(3);
 }
 
@@ -1896,6 +1903,7 @@ function toggleIntake() {
   const stage = document.getElementById('sessionStage').value;
   document.getElementById('intakeSection').classList.toggle('visible', stage === 'Intake');
   document.getElementById('closureSection').classList.toggle('visible', stage === 'Closure');
+  if (stage === 'Closure') updateClosureChecklist();
 }
 
 // ── SUD update ────────────────────────────────────────────────────────────────
@@ -2012,207 +2020,6 @@ function updateCSAutoDetect(client) {
         : 'Only complete this if a Case Summary needs to go to the referrer for this session. Leave on <strong>No CS Required</strong> for regular sessions.';
     }
     toggleCS();
-  }
-}
-
-// ── AI-assisted CS Draft ──────────────────────────────────────────────────────
-async function generateCSDraft() {
-  const btn      = document.getElementById('generateCSBtn');
-  const statusEl = document.getElementById('csGenStatus');
-  const errorEl  = document.getElementById('csGenError');
-
-  errorEl.style.display  = 'none';
-  statusEl.style.display = 'block';
-  btn.disabled = true;
-  btn.textContent = '⏳ Generating…';
-
-  // Gather all available session data
-  const c          = currentClient;
-  const stage      = document.getElementById('sessionStage').value;
-  const soapS      = document.getElementById('soapS').value.trim();
-  const soapO      = document.getElementById('soapO').value.trim();
-  const soapA      = document.getElementById('soapA').value.trim();
-  const soapP      = document.getElementById('soapP').value.trim();
-  const risk       = document.getElementById('riskLevel').value;
-  const outcome    = document.getElementById('sessionOutcome').value;
-  const sudStart   = document.getElementById('sudStart').value;
-  const sudEnd     = document.getElementById('sudEnd').value;
-  const fuDate     = document.getElementById('followUpDate').value;
-  const fuMode     = document.getElementById('followUpMode').value;
-  const noFU       = document.getElementById('noFollowUp').checked;
-  const sessNo     = document.getElementById('sessionNo').value;
-  const sessDate   = document.getElementById('sessionDate').value;
-  const presenting = stage === 'Intake' ? (document.getElementById('presenting').value.trim()) : '';
-  const treatGoal  = stage === 'Intake' ? (document.getElementById('treatmentGoal').value.trim()) : '';
-
-  // PHQ-4
-  const phq4text = getPHQ4Text('intake') || getPHQ4Text('closure') || '';
-
-  // Suicide risk summary
-  const suicideGate = document.getElementById('suicideGateVal').value;
-  const cprRisk = document.getElementById('cprRiskJudgement').value;
-  const spAction = document.getElementById('spCounsellorAction').value.trim();
-
-  // Safety plan exists?
-  const hasSafetyPlan = document.getElementById('safetyPlanBlock').style.display !== 'none';
-
-  // Build context for Claude
-  const sessionContext = `
-CASE REFERENCE: ${c ? c.case_id : 'Unknown'}
-SESSION: ${sessNo} | Date: ${sessDate} | Stage: ${stage} | Outcome: ${outcome}
-REFERRAL SOURCE: ${c ? (c.referral || 'Not specified') : 'Not specified'}
-PRESENTING ISSUE: ${c ? (c.issue || 'Not specified') : 'Not specified'}
-${presenting ? 'INTAKE PRESENTING CONCERN: ' + presenting : ''}
-${treatGoal ? 'TREATMENT GOAL: ' + treatGoal : ''}
-
-DISTRESS LEVELS: Start ${sudStart}/10 → End ${sudEnd}/10
-
-SOAP NOTES:
-S (What client shared): ${soapS || 'Not recorded'}
-O (Observations): ${soapO || 'Not recorded'}
-A (Clinical Assessment): ${soapA || 'Not recorded'}
-P (Plan): ${soapP || 'Not recorded'}
-
-RISK LEVEL: ${risk || 'Not specified'}
-${phq4text ? 'OUTCOME MEASURES: ' + phq4text : ''}
-${suicideGate === 'Yes' ? 'SUICIDE RISK SCREENING: Conducted' + (cprRisk ? ' — CPR Risk: ' + cprRisk : '') : 'SUICIDE RISK SCREENING: Not required this session'}
-${hasSafetyPlan ? 'SAFETY PLAN: In place. Counsellor action: ' + (spAction || 'documented') : ''}
-FOLLOW-UP: ${noFU ? 'No follow-up required' : (fuDate ? fuDate + (fuMode ? ' via ' + fuMode : '') : 'To be confirmed')}
-`.trim();
-
-  const prompt = `You are helping a psychotherapist at HealthServe, a Singapore NGO serving migrant workers, write a Case Summary (CS) for a referrer.
-
-The referrer may be a MOM welfare officer, employer, hospital social worker, or another NGO case manager. They are NOT clinicians. Write in clear, professional, plain English — no clinical jargon, no DSM terminology, no abbreviations without explanation. Be warm but professional. Be concise — 2 to 4 sentences per section.
-
-IMPORTANT: Do not include the client's name anywhere. Use the case reference number only. Do not make up information not provided. If a field has insufficient information, write a short placeholder the counsellor can fill in.
-
-Based on the session data below, generate a Case Summary with exactly these four sections. Return ONLY valid JSON with these four keys, no other text:
-{
-  "presenting_concern": "...",
-  "clinical_impression": "...",
-  "risk_and_safety": "...",
-  "counselling_plan": "..."
-}
-
-SESSION DATA:
-${sessionContext}
-
-GUIDELINES PER SECTION:
-- presenting_concern: Why was the client referred? What brought them to HealthServe? What key difficulties are they facing? (Plain language, no jargon)
-- clinical_impression: How is the client presenting emotionally and psychologically? Are they engaging? Any notable themes or progress? Translate clinical observations into everyday language.
-- risk_and_safety: State the current risk level in plain terms. If a safety plan is in place, mention it briefly. Reassure the referrer where appropriate. Never use terms like "suicidal ideation" — instead say "thoughts of harming himself" or "safety concerns" if needed.
-- counselling_plan: What is the counselling approach? How often are sessions? What are the goals? Any referrals or coordination needed with the referrer?`;
-
-  try {
-    const response = await fetch(
-      'https://vnwtzejhhvlvxiuqgihe.supabase.co/functions/v1/generate-cs',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ prompt })
-      }
-    );
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(data.error.message || 'API error');
-    }
-
-    const text = data.content[0].text.trim();
-    // Strip markdown fences if present
-    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const parsed = JSON.parse(clean);
-
-    // Populate CS fields
-    if (parsed.presenting_concern) document.getElementById('cs_presenting').value  = parsed.presenting_concern;
-    if (parsed.clinical_impression) document.getElementById('cs_impression').value = parsed.clinical_impression;
-    if (parsed.risk_and_safety)     document.getElementById('cs_risk_unified').value = parsed.risk_and_safety;
-    if (parsed.counselling_plan)    document.getElementById('cs_plan').value        = parsed.counselling_plan;
-
-    // Auto-set follow-up if not already filled
-    if (fuDate && !document.getElementById('cs_next_contact').value) {
-      const fuFormatted = new Date(fuDate).toLocaleDateString('en-SG', {day:'2-digit', month:'short', year:'numeric'});
-      document.getElementById('cs_next_contact').value = fuFormatted + (fuMode ? ' via ' + fuMode : '');
-    }
-
-    statusEl.style.display = 'none';
-    statusEl.innerHTML = '';
-
-    // Show success nudge
-    const successNote = document.createElement('div');
-    successNote.className = 'alert alert-info';
-    successNote.style.cssText = 'margin-bottom:12px; font-size:12px;';
-    successNote.innerHTML = '✓ Draft generated. Please read through each field carefully and edit as needed before sending. This is a starting point, not a finished document.';
-    document.getElementById('cs-unified').querySelector('.card-body').insertBefore(
-      successNote,
-      document.getElementById('cs-unified').querySelector('.form-grid')
-    );
-    setTimeout(() => successNote.remove(), 8000);
-
-  } catch (err) {
-    statusEl.style.display = 'none';
-    errorEl.textContent = 'Could not generate draft: ' + err.message + '. Please fill in the fields manually.';
-    errorEl.style.display = 'block';
-  }
-
-  btn.disabled = false;
-  btn.textContent = '✨ Regenerate Draft';
-}
-
-// ── Closure Checklist ─────────────────────────────────────────────────────────
-function updateClosureChecklist() {
-  const stage = document.getElementById('sessionStage').value;
-  if (stage !== 'Closure') return;
-
-  const isGroup = document.getElementById('sessionType').value === 'Group';
-  document.getElementById('closureChecklistIndividual').style.display = isGroup ? 'none' : 'block';
-  document.getElementById('closureChecklistGroup').style.display = isGroup ? 'block' : 'none';
-
-  if (!isGroup) {
-    // Reason
-    const reason = document.getElementById('closureReason').value;
-    const reasonOk = reason !== '';
-    document.getElementById('chk-reason-icon').textContent = reasonOk ? '✅' : '⬜';
-    document.getElementById('chk-reason-status').textContent = reasonOk ? reason : 'pending';
-    document.getElementById('chk-reason-status').style.color = reasonOk ? '#2D7A4F' : '#999';
-
-    // PHQ-4 closure
-    const phq4ok = ['phq4c_q1','phq4c_q2','phq4c_q3','phq4c_q4'].every(id => document.getElementById(id).value !== '');
-    document.getElementById('chk-phq4-icon').textContent = phq4ok ? '✅' : '⬜';
-    document.getElementById('chk-phq4-status').textContent = phq4ok ? 'complete' : 'pending';
-    document.getElementById('chk-phq4-status').style.color = phq4ok ? '#2D7A4F' : '#999';
-
-    // CS
-    const csRequired = document.getElementById('csRequired').value;
-    const csOk = csRequired === 'No' ||
-      (document.getElementById('cs_presenting').value.trim() &&
-       document.getElementById('cs_impression').value.trim() &&
-       document.getElementById('cs_plan').value.trim());
-    document.getElementById('chk-cs-icon').textContent = csOk ? '✅' : '⬜';
-    document.getElementById('chk-cs-status').textContent = csRequired === 'No' ? 'N/A — no CS required' : (csOk ? 'complete' : 'pending');
-    document.getElementById('chk-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
-
-  } else {
-    // Group: reason
-    const reason = document.getElementById('closureReason').value;
-    const reasonOk = reason !== '';
-    document.getElementById('chk-grp-reason-icon').textContent = reasonOk ? '✅' : '⬜';
-    document.getElementById('chk-grp-reason-status').textContent = reasonOk ? reason : 'pending';
-    document.getElementById('chk-grp-reason-status').style.color = reasonOk ? '#2D7A4F' : '#999';
-
-    // Group CS
-    const csRequired = document.getElementById('csRequired').value;
-    const csOk = csRequired === 'No' ||
-      (document.getElementById('cs_presenting').value.trim() &&
-       document.getElementById('cs_impression').value.trim() &&
-       document.getElementById('cs_plan').value.trim());
-    document.getElementById('chk-grp-cs-icon').textContent = csOk ? '✅' : '⬜';
-    document.getElementById('chk-grp-cs-status').textContent = csRequired === 'No' ? 'N/A' : (csOk ? 'complete' : 'pending');
-    document.getElementById('chk-grp-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
   }
 }
 
