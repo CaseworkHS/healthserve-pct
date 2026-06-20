@@ -1434,7 +1434,7 @@
         <div class="form-grid full" style="gap:14px;">
           <div class="form-group">
             <label>Presenting Concern</label>
-            <textarea id="cs_presenting" rows="3" placeholder="Why was the client referred? What are the main issues they presented with?"></textarea>
+            <textarea id="cs_presenting" rows="3" placeholder="Why was the client referred? What are the main issues they presented with?" oninput="updateClosureChecklist()"></textarea>
           </div>
           <div class="form-group">
             <label>Clinical Impression</label>
@@ -1518,7 +1518,6 @@
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="sendEmail()" style="background:#2D5A2D;">✉ Send Email to HealthServe</button>
         <button class="btn btn-secondary" onclick="startNew()">+ New Session</button>
-        <button class="btn btn-secondary" onclick="printOutput()">⎙ Print</button>
       </div>
     </div>
   </div>
@@ -1989,13 +1988,16 @@ function updateCSAutoDetect(client) {
   const isExternal = referral.startsWith('Ext -') || referral.startsWith('Ext–') || referral.startsWith('Ext -');
 
   if (csFlag === true) {
-    // Supervisor flagged CS required
+    // Supervisor/staff flagged CS required — lock it, counsellor cannot override
     document.getElementById('csRequired').value = 'Yes';
     yesPill.classList.add('selected');
     noPill.classList.remove('selected');
+    noPill.style.opacity = '0.4';
+    noPill.style.pointerEvents = 'none';
+    yesPill.style.pointerEvents = 'none';
     if (guidanceBox) {
       guidanceBox.className = 'alert alert-warning';
-      guidanceBox.innerHTML = '📋 <strong>CS flagged by supervisor for this client.</strong> Please complete the Case Summary. You may change to "No CS Required" only if Durga has confirmed it is not required this session.';
+      guidanceBox.innerHTML = '📋 <strong>CS required for this case</strong> — set by Bobby/supervisor when the case was created. Complete the Case Summary on the next screen.';
     }
     toggleCS();
   } else if (isExternal) {
@@ -2020,6 +2022,62 @@ function updateCSAutoDetect(client) {
         : 'Only complete this if a Case Summary needs to go to the referrer for this session. Leave on <strong>No CS Required</strong> for regular sessions.';
     }
     toggleCS();
+  }
+}
+
+// ── Closure Checklist ─────────────────────────────────────────────────────────
+function updateClosureChecklist() {
+  const stage = document.getElementById('sessionStage').value;
+  if (stage !== 'Closure') return;
+
+  const isGroup = document.getElementById('sessionType').value === 'Group';
+  document.getElementById('closureChecklistIndividual').style.display = isGroup ? 'none' : 'block';
+  document.getElementById('closureChecklistGroup').style.display = isGroup ? 'block' : 'none';
+
+  if (!isGroup) {
+    // Closure reason
+    const reason = document.getElementById('closureReason').value;
+    const reasonOk = reason !== '';
+    document.getElementById('chk-reason-icon').textContent = reasonOk ? '✅' : '⬜';
+    document.getElementById('chk-reason-status').textContent = reasonOk ? reason : 'pending';
+    document.getElementById('chk-reason-status').style.color = reasonOk ? '#2D7A4F' : '#999';
+
+    // PHQ-4 closure — check all 4 hidden inputs have values
+    const phq4ok = ['phq4c_q1','phq4c_q2','phq4c_q3','phq4c_q4']
+      .every(id => { const el = document.getElementById(id); return el && el.value !== ''; });
+    document.getElementById('chk-phq4-icon').textContent = phq4ok ? '✅' : '⬜';
+    document.getElementById('chk-phq4-status').textContent = phq4ok ? 'complete' : 'pending';
+    document.getElementById('chk-phq4-status').style.color = phq4ok ? '#2D7A4F' : '#999';
+
+    // CS status
+    const csRequired = document.getElementById('csRequired').value;
+    const csEl1 = document.getElementById('cs_presenting');
+    const csEl2 = document.getElementById('cs_impression');
+    const csEl3 = document.getElementById('cs_plan');
+    const csOk = csRequired !== 'Yes' ||
+      (csEl1 && csEl1.value.trim() && csEl2 && csEl2.value.trim() && csEl3 && csEl3.value.trim());
+    document.getElementById('chk-cs-icon').textContent = csOk ? '✅' : '⬜';
+    document.getElementById('chk-cs-status').textContent = csRequired !== 'Yes'
+      ? 'N/A — no CS required'
+      : (csOk ? 'complete' : 'pending — fill in Screen 3');
+    document.getElementById('chk-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
+
+  } else {
+    // Group: closure reason
+    const reason = document.getElementById('closureReason').value;
+    const reasonOk = reason !== '';
+    document.getElementById('chk-grp-reason-icon').textContent = reasonOk ? '✅' : '⬜';
+    document.getElementById('chk-grp-reason-status').textContent = reasonOk ? reason : 'pending';
+    document.getElementById('chk-grp-reason-status').style.color = reasonOk ? '#2D7A4F' : '#999';
+
+    // Group CS
+    const csRequired = document.getElementById('csRequired').value;
+    const csEl1 = document.getElementById('cs_presenting');
+    const csEl2 = document.getElementById('cs_impression');
+    const csOk = csRequired !== 'Yes' || (csEl1 && csEl1.value.trim() && csEl2 && csEl2.value.trim());
+    document.getElementById('chk-grp-cs-icon').textContent = csOk ? '✅' : '⬜';
+    document.getElementById('chk-grp-cs-status').textContent = csRequired !== 'Yes' ? 'N/A' : (csOk ? 'complete' : 'pending');
+    document.getElementById('chk-grp-cs-status').style.color = csOk ? '#2D7A4F' : '#999';
   }
 }
 

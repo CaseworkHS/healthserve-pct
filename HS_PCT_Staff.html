@@ -406,8 +406,9 @@ function clearCaseForm() {
 // ── Bulk Upload ───────────────────────────────────────────────────────────────
 function downloadTemplate() {
   const headers = ['case_id','name','counsellor_name','case_type','issue','risk_level','nationality','language','referral','location','stage','cs_required'];
-  const example = ['CI-2026-047','Client Name','Bobby','Individual','Work Injury / WICA','LOW','Bangladesh','Bengali','Ext - MOM/ANT','Tuas View Dorm','Intake','false'];
-  const csv = [headers.join(','), example.join(',')].join('\n');
+  const example = ['CI-2026-047','Client Name','Bobby','Individual','Work Injury / WICA','LOW','Bangladesh','Bengali','Ext - MOM/ANT','Tuas View Dorm','Intake',''];
+  const note = ['# cs_required: leave blank to auto-detect from referral (Ext = Yes). Or type true/false to override.','','','','','','','','','','',''];
+  const csv = [headers.join(','), note.join(','), example.join(',')].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'HS_PCT_Client_Upload_Template.csv'; a.click();
 }
@@ -459,7 +460,11 @@ async function uploadCSV() {
       issue: r.issue || null, risk_level: r.risk_level || null,
       nationality: r.nationality || null, language: r.language || null,
       referral: r.referral || null, location: r.location || null,
-      stage: r.stage || 'Intake', cs_required: r.cs_required === 'true',
+      stage: r.stage || 'Intake',
+      // cs_required: explicit true/false overrides auto-detect; blank = auto from referral
+      cs_required: r.cs_required === 'true' ? true
+                 : r.cs_required === 'false' ? false
+                 : (r.referral || '').startsWith('Ext'),
       status: 'Active',
     };
     const { error } = await db.from('clients').upsert(record, { onConflict: 'case_id' });
