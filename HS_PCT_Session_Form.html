@@ -2848,11 +2848,6 @@ function generateOutput() {
   const counsellor = document.getElementById('counsellorSelect').value;
   const isGroupSession = document.getElementById('sessionType').value === 'Group';
 
-  const soapS = isGroupSession ? document.getElementById('groupSoapS').value : document.getElementById('soapS').value;
-  const soapO = isGroupSession ? document.getElementById('groupSoapO').value : document.getElementById('soapO').value;
-  const soapA = isGroupSession ? document.getElementById('groupSoapA').value : document.getElementById('soapA').value;
-  const soapP = isGroupSession ? document.getElementById('groupSoapP').value : document.getElementById('soapP').value;
-  
   // Format date
   const dateFormatted = sessDate ? new Date(sessDate).toLocaleDateString('en-SG', {day:'2-digit',month:'long',year:'numeric'}) : '—';
   const fuFormatted = fuDate ? new Date(fuDate).toLocaleDateString('en-SG', {day:'2-digit',month:'long',year:'numeric'}) : '—';
