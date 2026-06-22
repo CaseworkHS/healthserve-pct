@@ -1908,7 +1908,7 @@
     <div class="card-body">
       <div class="output-block" id="crOutput"></div>
       <div style="margin-top:10px;">
-        <button class="btn btn-primary" onclick="saveSectionAsPDF('crOutput','Session_Record')">⬇ Save CR as PDF</button>
+        <button class="btn btn-primary" onclick="saveSectionAsPDF('crOutput','Session_Record')">⬇ Save CR as PDF &nbsp;<span style="font-weight:400;font-size:11px;opacity:.8;">YYYY CR [Client Name]</span></button>
         <button class="btn btn-secondary" style="margin-left:8px;" onclick="copyText('crOutput', this)">⍘ Copy text</button>
       </div>
     </div>
@@ -1919,7 +1919,7 @@
     <div class="card-body">
       <div class="output-block" id="csOutput"></div>
       <div style="margin-top:10px;">
-        <button class="btn btn-gold" onclick="saveSectionAsPDF('csOutput','Case_Summary')" style="color:#231F1F;">⬇ Save CS as PDF</button>
+        <button class="btn btn-gold" onclick="saveSectionAsPDF('csOutput','Case_Summary')" style="color:#231F1F;">⬇ Save CS as PDF &nbsp;<span style="font-weight:400;font-size:11px;opacity:.7;">YYYYMMDD CS (No) [Client Name]</span></button>
         <button class="btn btn-secondary" style="margin-left:8px;" onclick="copyText('csOutput', this)">⍘ Copy text</button>
       </div>
     </div>
@@ -2163,11 +2163,18 @@ function validateScreen2() {
   const sessStage_phq = document.getElementById('sessionStage') ? document.getElementById('sessionStage').value : '';
   const phqRequired = (sessStage_phq === 'Intake' || sessStage_phq === 'Closure');
   if (phqRequired) {
-    const phq4_q1 = document.getElementById('phq4_q1') ? document.getElementById('phq4_q1').value : '';
-    const phq4_q2 = document.getElementById('phq4_q2') ? document.getElementById('phq4_q2').value : '';
-    const phq4_q3 = document.getElementById('phq4_q3') ? document.getElementById('phq4_q3').value : '';
-    const phq4_q4 = document.getElementById('phq4_q4') ? document.getElementById('phq4_q4').value : '';
-    if (!phq4_q1 || !phq4_q2 || !phq4_q3 || !phq4_q4) {
+    // Closure uses phq4c_q prefix, Intake uses phq4_q prefix
+    const prefix = sessStage_phq === 'Closure' ? 'phq4c_q' : 'phq4_q';
+    const v1 = document.getElementById(prefix + '1')?.value ?? '';
+    const v2 = document.getElementById(prefix + '2')?.value ?? '';
+    const v3 = document.getElementById(prefix + '3')?.value ?? '';
+    const v4 = document.getElementById(prefix + '4')?.value ?? '';
+    // Also check alternate prefix in case stage was manually changed after auto-load
+    const altPrefix = prefix === 'phq4c_q' ? 'phq4_q' : 'phq4c_q';
+    const a1 = document.getElementById(altPrefix + '1')?.value ?? '';
+    const intakeOrClosureDone = (v1 !== '' && v2 !== '' && v3 !== '' && v4 !== '')
+      || (a1 !== '' && document.getElementById(altPrefix + '2')?.value !== '' && document.getElementById(altPrefix + '3')?.value !== '' && document.getElementById(altPrefix + '4')?.value !== '');
+    if (!intakeOrClosureDone) {
       errors.push('• PHQ-4 — required for Intake and Closure sessions (all 4 questions)');
     }
   }
@@ -3587,26 +3594,54 @@ function saveAsPDF() {
   setTimeout(() => { window.print(); }, 150);
 }
 
-function saveSectionAsPDF(blockId, filename) {
-  // Open a minimal print window with just the one block's content
+function saveSectionAsPDF(blockId, type) {
   const block = document.getElementById(blockId);
   if (!block) return;
   const content = block.innerText || block.textContent;
-  const clientName = document.getElementById('strip2-name') ?
-    document.getElementById('strip2-name').textContent.trim() : '';
-  const sessionNo = document.getElementById('strip2-sessNo') ?
-    ('Session ' + document.getElementById('strip2-sessNo').textContent.trim()) : '';
-  const date = document.getElementById('sessionDate') ?
-    document.getElementById('sessionDate').value : '';
-  const title = filename === 'Session_Record' ? 'Session Record (CR)' : 'Case Summary for Referrer';
+
+  // Build SOP-compliant filename
+  const isGroup = document.getElementById('sessionType').value === 'Group';
+  const rawDate = document.getElementById('sessionDate').value;
+  const sessNo  = document.getElementById('sessionNo').value || '1';
+  const clientName = currentClient ? (currentClient.name || currentClient.case_id) : '';
+  const caseId = currentClient ? currentClient.case_id : '';
+
+  // Format date as YYYYMMDD
+  const dateStr = rawDate ? rawDate.replace(/-/g,'') : new Date().toISOString().slice(0,10).replace(/-/g,'');
+  // Year only for CR
+  const yearStr = rawDate ? rawDate.slice(0,4) : new Date().getFullYear().toString();
+
+  // SOP naming:
+  // Individual CR: YYYY CR [Client Name]
+  // Individual CS: YYYYMMDD CS (Session No) [Client Name]
+  // Group CR: YYYYMMDD (Session No) [Dorm/Company Name]
+  // Group CS: YYYYMMDD CS (Session No) [Dorm/Company Name]
+  let filename;
+  if (isGroup) {
+    filename = type === 'Session_Record'
+      ? `${dateStr} (${sessNo}) ${clientName}`
+      : `${dateStr} CS (${sessNo}) ${clientName}`;
+  } else {
+    filename = type === 'Session_Record'
+      ? `${yearStr} CR ${clientName}`
+      : `${dateStr} CS (${sessNo}) ${clientName}`;
+  }
+  // Sanitise for filesystem
+  filename = filename.replace(/[/\\?%*:|"<>]/g, '-');
+
+  const title = type === 'Session_Record'
+    ? (isGroup ? 'Group Counselling Report (CR)' : 'Counselling Report (CR)')
+    : (isGroup ? 'Group Case Summary (CS)' : 'Individual Case Summary (CS)');
+
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>${title}</title>
+  <title>${filename}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
            font-size: 12px; line-height: 1.6; color: #231F1F; padding: 24px 32px; }
     .print-header { border-bottom: 2px solid #8C0303; padding-bottom: 10px; margin-bottom: 16px; }
     .print-header h2 { color: #8C0303; font-size: 16px; margin: 0 0 4px 0; }
     .print-header p { margin: 0; font-size: 11px; color: #666; }
+    .filename-note { font-size:10px; color:#999; margin-bottom:12px; font-style:italic; }
     pre { white-space: pre-wrap; font-family: inherit; font-size: 12px; margin: 0; }
     .print-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ccc;
                     font-size: 10px; color: #999; }
@@ -3614,12 +3649,15 @@ function saveSectionAsPDF(blockId, filename) {
 </head><body>
   <div class="print-header">
     <h2>HealthServe — ${title}</h2>
-    <p>${clientName} &nbsp;|&nbsp; ${sessionNo} &nbsp;|&nbsp; ${date}</p>
+    <p>${clientName} &nbsp;|&nbsp; Session ${sessNo} &nbsp;|&nbsp; ${rawDate || ''} &nbsp;|&nbsp; ${caseId}</p>
   </div>
+  <div class="filename-note">Save as: <strong>${filename}.pdf</strong></div>
   <pre>${content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
   <div class="print-footer">HealthServe Psychotherapy & Counselling Team — Confidential. Not for distribution.</div>
 </body></html>`;
+
   const win = window.open('', '_blank', 'width=800,height=700');
+  if (!win) { alert('Pop-up blocked. Please allow pop-ups for this site.'); return; }
   win.document.write(html);
   win.document.close();
   win.focus();
