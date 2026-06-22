@@ -106,10 +106,12 @@ input:focus,select:focus{outline:none;border-color:var(--crimson);}
 <div class="container">
   <div class="tabs">
     <button class="tab active" onclick="showTab('outcomes',this)">📊 Outcomes</button>
+    <button class="tab" onclick="showTab('group',this)">👥 Group Analytics</button>
     <button class="tab" onclick="showTab('sessions',this)">📋 All Sessions</button>
     <button class="tab" onclick="showTab('flags',this)">🚨 Red Flags</button>
     <button class="tab" onclick="showTab('followup',this)">📅 Follow-Up</button>
     <button class="tab" onclick="showTab('accountability',this)">✅ Accountability</button>
+    <button class="tab" onclick="showTab('mgmt',this)">📄 Management Report</button>
     <button class="tab" onclick="showTab('audit',this)">🔍 Audit</button>
     <button class="tab" onclick="showTab('export',this)">⬇ Export</button>
   </div>
@@ -135,10 +137,46 @@ input:focus,select:focus{outline:none;border-color:var(--crimson);}
     <div class="stats-grid" id="outcomeStats">
       <div class="stat-card"><div class="stat-num" id="os-sessions">—</div><div class="stat-label">Total Sessions</div></div>
       <div class="stat-card"><div class="stat-num" id="os-cases">—</div><div class="stat-label">Active Cases</div></div>
-      <div class="stat-card"><div class="stat-num green" id="os-sud">—</div><div class="stat-label">Avg SUD Reduction</div><div class="stat-sub">per session</div></div>
-      <div class="stat-card"><div class="stat-num" id="os-closed">—</div><div class="stat-label">Cases Closed</div></div>
       <div class="stat-card highlight"><div class="stat-num" id="os-flags">—</div><div class="stat-label">Red Flags</div></div>
+      <div class="stat-card"><div class="stat-num" id="os-closed">—</div><div class="stat-label">Cases Closed</div></div>
       <div class="stat-card"><div class="stat-num" id="os-feedback">—</div><div class="stat-label">Feedback Collected</div></div>
+    </div>
+
+    <!-- Three outcome categories -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;" id="outcomeCategoryGrid">
+      <div class="card" style="border-top:4px solid #8C0303;">
+        <div class="card-body">
+          <div style="font-size:11px;font-weight:700;color:#8C0303;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🛡 Safety Outcomes</div>
+          <div style="font-size:12px;color:var(--text-gray);margin-bottom:8px;">Cases entering HIGH/MED-HIGH risk</div>
+          <div style="font-size:24px;font-weight:700;color:#8C0303;" id="oc-highrisk">—</div>
+          <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+          <div style="font-size:12px;color:var(--text-gray);margin-bottom:4px;">Risk reduced by closure</div>
+          <div style="font-size:22px;font-weight:700;color:var(--green);" id="oc-riskdeesc">—</div>
+          <div style="font-size:11px;color:var(--text-gray);">of high-risk closed cases</div>
+        </div>
+      </div>
+      <div class="card" style="border-top:4px solid #2D7A4F;">
+        <div class="card-body">
+          <div style="font-size:11px;font-weight:700;color:#2D7A4F;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">💚 Wellbeing Outcomes</div>
+          <div style="font-size:12px;color:var(--text-gray);margin-bottom:4px;">Avg SUD reduction per session</div>
+          <div style="font-size:24px;font-weight:700;color:var(--green);" id="oc-sud">—</div>
+          <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+          <div style="font-size:12px;color:var(--text-gray);margin-bottom:4px;">PHQ-4 clinically improved (≥3pts)</div>
+          <div style="font-size:22px;font-weight:700;color:var(--green);" id="oc-phqimproved">—</div>
+          <div style="font-size:11px;color:var(--text-gray);">of cases with intake + closure scores</div>
+        </div>
+      </div>
+      <div class="card" style="border-top:4px solid #FFCC00;">
+        <div class="card-body">
+          <div style="font-size:11px;font-weight:700;color:#7A5800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📈 Engagement & Reach</div>
+          <div style="font-size:12px;color:var(--text-gray);margin-bottom:4px;">Case completion rate</div>
+          <div style="font-size:24px;font-weight:700;color:#7A5800;" id="oc-completion">—</div>
+          <div style="font-size:11px;color:var(--text-gray);">closed as Resolved / Goals met</div>
+          <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+          <div style="font-size:12px;color:var(--text-gray);margin-bottom:4px;">Avg sessions per completed case</div>
+          <div style="font-size:22px;font-weight:700;color:#7A5800;" id="oc-avgsessions">—</div>
+        </div>
+      </div>
     </div>
 
     <div class="chart-grid">
@@ -290,8 +328,127 @@ input:focus,select:focus{outline:none;border-color:var(--crimson);}
     </div>
   </div>
 
-  <!-- AUDIT -->
-  <div id="tab-audit" class="tab-panel" style="display:none;">
+  <!-- GROUP ANALYTICS -->
+  <div id="tab-group" class="tab-panel" style="display:none;">
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group"><label>Period</label>
+        <select id="grpPeriod" onchange="loadGroupAnalytics()">
+          <option value="year" selected>This Year (2026)</option>
+          <option value="quarter">This Quarter</option>
+          <option value="month">This Month</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Group summary cards -->
+    <div class="stats-grid" id="grpStats" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-num" id="gs-sessions">—</div><div class="stat-label">Group Sessions</div></div>
+      <div class="stat-card"><div class="stat-num" id="gs-pax">—</div><div class="stat-label">Total Participants</div></div>
+      <div class="stat-card"><div class="stat-num green" id="gs-better">—</div><div class="stat-label">Felt Better Post-Session</div></div>
+      <div class="stat-card"><div class="stat-num" id="gs-helpful">—</div><div class="stat-label">Found Session Helpful</div></div>
+      <div class="stat-card"><div class="stat-num" id="gs-recommend">—</div><div class="stat-label">Would Recommend</div></div>
+      <div class="stat-card highlight"><div class="stat-num" id="gs-cw">—</div><div class="stat-label">CW Referrals Made</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="card">
+        <div class="card-header" style="background:#1B4D3E;">Mood Before vs After Session (aggregate counts)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartGrpMood"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="background:#1B4D3E;">Participant Wellbeing After Session</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartGrpPost"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="background:#4A6741;">What Participants Found Helpful</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartGrpHelpful"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="background:#4A6741;">Pre-Session Wellbeing Indicators</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartGrpPre"></canvas></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header gold">Group Sessions — Detail</div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Case ID</th><th>Group</th><th>Topic</th><th>Pax</th><th>Language</th><th>Pre-Mood (Sad+Worried)</th><th>Feel Better %</th><th>Very Helpful %</th><th>CW Referral</th></tr></thead>
+            <tbody id="grpDetailBody"><tr><td colspan="10" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANAGEMENT REPORT -->
+  <div id="tab-mgmt" class="tab-panel" style="display:none;">
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group"><label>Report Month</label>
+        <select id="mgmtMonth" onchange="loadMgmtReport()">
+          <option value="1">January 2026</option><option value="2">February 2026</option>
+          <option value="3">March 2026</option><option value="4">April 2026</option>
+          <option value="5">May 2026</option><option value="6" selected>June 2026</option>
+          <option value="7">July 2026</option><option value="8">August 2026</option>
+          <option value="9">September 2026</option><option value="10">October 2026</option>
+          <option value="11">November 2026</option><option value="12">December 2026</option>
+        </select>
+      </div>
+      <div class="form-group" style="justify-content:flex-end;">
+        <label>&nbsp;</label>
+        <button class="btn btn-green" onclick="exportMgmtReport()">⬇ Export Month as CSV</button>
+      </div>
+    </div>
+
+    <div class="alert alert-info" style="margin-bottom:16px;">This mirrors the HealthServe monthly report format. Export to fill the management dashboard spreadsheet.</div>
+
+    <!-- Volume -->
+    <div class="card">
+      <div class="card-header">Service Volume</div>
+      <div class="card-body">
+        <table class="data-table" id="mgmtVolume">
+          <thead><tr><th>Metric</th><th>This Month</th><th>YTD</th></tr></thead>
+          <tbody id="mgmtVolumeBody"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Individual cases -->
+    <div class="card">
+      <div class="card-header">Individual Counselling Cases</div>
+      <div class="card-body">
+        <table class="data-table">
+          <thead><tr><th>Category</th><th>Breakdown</th><th>This Month</th><th>YTD</th></tr></thead>
+          <tbody id="mgmtIndBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Group sessions -->
+    <div class="card">
+      <div class="card-header" style="background:#1B4D3E;">Group Counselling Sessions</div>
+      <div class="card-body">
+        <table class="data-table">
+          <thead><tr><th>Category</th><th>Breakdown</th><th>This Month</th><th>YTD</th></tr></thead>
+          <tbody id="mgmtGrpBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Outcomes -->
+    <div class="card">
+      <div class="card-header gold">Counselling Outcomes (for management & board)</div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;">PHQ-4 is used as a distress screener, not a diagnostic tool. A ≥3 point improvement is the established threshold for clinically meaningful change (Löwe et al., 2010). SUD measures immediate in-session distress relief.</div>
+        <table class="data-table">
+          <thead><tr><th>Outcome Category</th><th>Measure</th><th>This Month</th><th>YTD</th></tr></thead>
+          <tbody id="mgmtOutcomesBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
     <div class="alert alert-info">Tamper-proof log of every session record insert and update. Cannot be altered by any user.</div>
     <div class="card">
       <div class="card-header dark">Audit Log (Last 200 Events)</div>
@@ -376,6 +533,7 @@ async function init() {
   await loadFollowUp();
   await loadAccountability();
   await loadAudit();
+  await loadMgmtReport();
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -386,7 +544,8 @@ function showTab(name, btn) {
   btn.classList.add('active');
 }
 
-// ── Outcomes ──────────────────────────────────────────────────────────────────
+// ── Outcomes enhanced ────────────────────────────────────────────────────────
+// ── Outcomes (old version replaced above) ──────────────────────────────────────
 function getDateFilter() {
   const period = document.getElementById('outcomePeriod').value;
   const now = new Date();
