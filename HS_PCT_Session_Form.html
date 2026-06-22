@@ -2846,21 +2846,26 @@ function generateOutput() {
   const isFlag = document.getElementById('redFlag').checked;
   const flagNote = document.getElementById('flagNote').value;
   const counsellor = document.getElementById('counsellorSelect').value;
+  const isGroupSession = document.getElementById('sessionType').value === 'Group';
+
+  const soapS = isGroupSession ? document.getElementById('groupSoapS').value : document.getElementById('soapS').value;
+  const soapO = isGroupSession ? document.getElementById('groupSoapO').value : document.getElementById('soapO').value;
+  const soapA = isGroupSession ? document.getElementById('groupSoapA').value : document.getElementById('soapA').value;
+  const soapP = isGroupSession ? document.getElementById('groupSoapP').value : document.getElementById('soapP').value;
   
   // Format date
   const dateFormatted = sessDate ? new Date(sessDate).toLocaleDateString('en-SG', {day:'2-digit',month:'long',year:'numeric'}) : '—';
   const fuFormatted = fuDate ? new Date(fuDate).toLocaleDateString('en-SG', {day:'2-digit',month:'long',year:'numeric'}) : '—';
-  
+
   // ── CR Block ──────────────────────────────────────────────────────────────
   let cr = '';
   cr += '═══════════════════════════════════════════════════════════\n';
   cr += 'HEALTHSERVE — SESSION RECORD\n';
   if (isFlag) cr += '🚨 RED FLAG SESSION — SUPERVISOR NOTIFICATION REQUIRED\n';
   cr += '═══════════════════════════════════════════════════════════\n\n';
-  
+
   cr += 'CLIENT & SESSION DETAILS\n';
   cr += '─────────────────────────────────────────────────────────\n';
-  const isGroupSession = document.getElementById('sessionType').value === 'Group';
 
   if (isGroupSession) {
     // ── GROUP CR OUTPUT ────────────────────────────────────────────
