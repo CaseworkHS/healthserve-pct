@@ -1586,69 +1586,6 @@
       </div>
     </div>
 
-    <!-- CW Referral -->
-    <div class="card">
-      <div class="card-header" style="background:#8C0303; color:white;">Casework Referral</div>
-      <div class="card-body">
-        <label style="font-size:13px; font-weight:600;">Does any member need casework support?</label>
-        <div class="pill-group" id="cwReferralPills" style="margin:8px 0;">
-          <div class="pill outcome selected" data-val="No" onclick="selectPill(this,'cwReferralPills','groupCwReferral');toggleCwReferral()">No</div>
-          <div class="pill outcome" data-val="Yes" onclick="selectPill(this,'cwReferralPills','groupCwReferral');toggleCwReferral()">Yes — refer to casework</div>
-        </div>
-        <input type="hidden" id="groupCwReferral" value="No">
-        <div id="cwReferralDetails" style="display:none; margin-top:10px;">
-          <div class="alert alert-warning" style="margin-bottom:10px; font-size:12px;">A separate referral email will automatically be sent to <strong>casework@healthserve.org.sg</strong> when you click Send Email.</div>
-          <div class="form-group">
-            <label>What casework support is needed?</label>
-            <textarea id="cwReferralText" rows="3" placeholder="Describe the support needed — include member name(s) and specific concern. This will appear in the referral email to the casework team."></textarea>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Group Outcome & Follow-up -->
-    <div class="card">
-      <div class="card-header">Group Outcome &amp; Follow-Up</div>
-      <div class="card-body">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Session Outcome</label>
-            <div class="pill-group" id="grpOutcomePills">
-              <div class="pill outcome selected" data-val="Completed" onclick="selectPill(this,'grpOutcomePills','grpOutcome')">Completed</div>
-              <div class="pill outcome" data-val="Incomplete" onclick="selectPill(this,'grpOutcomePills','grpOutcome')">Incomplete</div>
-            </div>
-            <input type="hidden" id="grpOutcome" value="Completed">
-          </div>
-          <div class="form-group">
-            <label>Group Follow-up</label>
-            <div class="pill-group" id="grpFollowUpPills">
-              <div class="pill outcome selected" data-val="No" onclick="selectPill(this,'grpFollowUpPills','grpNoFollowUp');toggleGrpFollowUp()">No follow-up needed</div>
-              <div class="pill outcome" data-val="Yes" onclick="selectPill(this,'grpFollowUpPills','grpNoFollowUp');toggleGrpFollowUp()">Follow-up session planned</div>
-            </div>
-            <input type="hidden" id="grpNoFollowUp" value="No">
-          </div>
-        </div>
-        <div id="grpFollowUpDateBlock" style="display:none; margin-top:10px;">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Next Session Date</label>
-              <input type="date" id="grpFollowUpDate">
-            </div>
-            <div class="form-group">
-              <label>Mode</label>
-              <select id="grpFollowUpMode">
-                <option>F2F at HealthServe</option>
-                <option>F2F at Dormitory</option>
-                <option>F2F at Hospital</option>
-                <option>Online — Zoom</option>
-                <option>WhatsApp Video</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- POST-SESSION banner -->
     <div style="background:#1B4D3E; color:white; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px;">
       <strong>📊 POST-SESSION — ask these at the END of the session before participants leave</strong>
@@ -1727,6 +1664,78 @@
             <input type="text" id="postComment3" placeholder="Comment 3 (optional)">
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- CW Referral — after post-session -->
+    <div class="card">
+      <div class="card-header" style="background:#8C0303; color:white;">Casework Referral</div>
+      <div class="card-body">
+        <label style="font-size:13px; font-weight:600;">Does any participant need casework support?</label>
+        <div class="pill-group" id="cwReferralPills" style="margin:8px 0;">
+          <div class="pill outcome selected" data-val="No" onclick="selectPill(this,'cwReferralPills','groupCwReferral');toggleCwReferral()">No</div>
+          <div class="pill outcome" data-val="Yes" onclick="selectPill(this,'cwReferralPills','groupCwReferral');toggleCwReferral()">Yes — refer to casework</div>
+        </div>
+        <input type="hidden" id="groupCwReferral" value="No">
+        <div id="cwReferralDetails" style="display:none; margin-top:10px;">
+          <div class="alert alert-warning" style="margin-bottom:10px; font-size:12px;">A separate referral email will be sent to <strong>casework@healthserve.org.sg</strong> automatically when you click Send Email.</div>
+          <div class="form-group">
+            <label>What casework support is needed?</label>
+            <textarea id="cwReferralText" rows="3" placeholder="Describe the support needed — include participant name(s) and specific concern."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group Outcome & Follow-up — after post-session -->
+    <div class="card">
+      <div class="card-header">Group Outcome &amp; Follow-Up</div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Session Outcome</label>
+          <div class="pill-group" id="grpOutcomePills">
+            <div class="pill outcome selected" data-val="Completed" onclick="selectPill(this,'grpOutcomePills','grpOutcome')">Completed</div>
+            <div class="pill outcome" data-val="Incomplete" onclick="selectPill(this,'grpOutcomePills','grpOutcome')">Incomplete</div>
+          </div>
+          <input type="hidden" id="grpOutcome" value="Completed">
+        </div>
+
+        <label style="font-size:11px; font-weight:600; color:var(--crimson); text-transform:uppercase; letter-spacing:.4px;">Follow-Up (tick all that apply)</label>
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:12px;">
+
+          <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-weight:400; font-size:13px;">
+            <input type="checkbox" id="grpFollowUpGroup" onchange="toggleGrpFollowUp()" style="margin-top:2px; width:16px; height:16px; flex-shrink:0;">
+            <span><strong>Group follow-up session planned</strong> — another session for the whole group</span>
+          </label>
+          <div id="grpFollowUpDateBlock" style="display:none; margin-left:26px;">
+            <div class="form-grid">
+              <div class="form-group"><label>Next Group Session Date</label><input type="date" id="grpFollowUpDate"></div>
+              <div class="form-group"><label>Mode</label>
+                <select id="grpFollowUpMode">
+                  <option>F2F at HealthServe</option><option>F2F at Dormitory</option>
+                  <option>F2F at Hospital</option><option>Online — Zoom</option><option>WhatsApp Video</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-weight:400; font-size:13px;">
+            <input type="checkbox" id="grpFollowUpIndividual" onchange="toggleGrpIndividualFollowUp()" style="margin-top:2px; width:16px; height:16px; flex-shrink:0;">
+            <span><strong>Individual follow-up needed</strong> — specific participant(s) need separate follow-up outside the group</span>
+          </label>
+          <div id="grpIndividualFollowUpBlock" style="display:none; margin-left:26px;">
+            <div class="form-group">
+              <label>Individual follow-up details</label>
+              <textarea id="grpIndividualFollowUpText" rows="2" placeholder="Which participant(s) and what follow-up is needed? e.g. Participant A — referral to individual counselling; Participant B — check-in call next week"></textarea>
+            </div>
+          </div>
+
+          <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-weight:400; font-size:13px;">
+            <input type="checkbox" id="grpNoFollowUpCheck" onchange="toggleGrpNoFollowUp()" style="margin-top:2px; width:16px; height:16px; flex-shrink:0;">
+            <span><strong>No follow-up needed</strong> — single session, case can be closed after this</span>
+          </label>
+        </div>
+        <input type="hidden" id="grpNoFollowUp" value="No">
       </div>
     </div>
 
@@ -2093,8 +2102,39 @@ function validateScreen3() {
 
 function validateScreen2() {
   const errors = [];
+  const isGroup = document.getElementById('sessionType').value === 'Group';
 
-  // SOAP notes
+  if (isGroup) {
+    // Group validation — check group-specific required fields only
+    const grpTopic = document.getElementById('groupTopic').value;
+    const grpObs   = document.getElementById('groupObservation').value.trim();
+    const grpSoapS = document.getElementById('groupSoapS').value.trim();
+    const grpSoapP = document.getElementById('groupSoapP').value.trim();
+    if (!grpTopic)  errors.push('• Topic Discussed — select the session topic');
+    if (!grpObs)    errors.push('• Group Observation — describe the group\'s affect and behaviour');
+    if (!grpSoapS)  errors.push('• S (Subjective) — themes emerging from the group');
+    if (!grpSoapP)  errors.push('• P (Plan) — goals, approach and recommendations');
+    if (errors.length > 0) {
+      alert('Please complete the following before continuing:\n\n' + errors.join('\n'));
+      return;
+    }
+    // Auto-fill group CS next contact
+    const grpNoFU   = document.getElementById('grpNoFollowUp').value;
+    const grpFuDate = document.getElementById('grpFollowUpDate').value;
+    const grpFuMode = document.getElementById('grpFollowUpMode').value;
+    const grpNext   = document.getElementById('grpCsNextContact');
+    if (grpNext && !grpNext.value) {
+      if (grpNoFU !== 'Yes') grpNext.value = 'No follow-up required';
+      else if (grpFuDate) {
+        const fmt = new Date(grpFuDate).toLocaleDateString('en-SG', { day:'2-digit', month:'short', year:'numeric' });
+        grpNext.value = fmt + (grpFuMode ? ' — ' + grpFuMode : '');
+      }
+    }
+    goToScreen(3);
+    return;
+  }
+
+  // Individual validation
   const soapS_v = document.getElementById('soapS') ? document.getElementById('soapS').value.trim() : '';
   const soapA_v = document.getElementById('soapA') ? document.getElementById('soapA').value.trim() : '';
   const soapP_v = document.getElementById('soapP') ? document.getElementById('soapP').value.trim() : '';
@@ -2102,29 +2142,25 @@ function validateScreen2() {
   if (!soapA_v) errors.push('• SOAP A (Assessment) — your clinical impression');
   if (!soapP_v) errors.push('• SOAP P (Plan) — next steps agreed with client');
 
-  // Outcome
   const outcome_v = document.getElementById('sessionOutcome') ? document.getElementById('sessionOutcome').value : '';
   if (!outcome_v) errors.push('• Outcome — how did the session end?');
 
-  // Follow-up date
   const noFU_v   = document.getElementById('noFollowUp') ? document.getElementById('noFollowUp').checked : false;
   const fuDate_v = document.getElementById('followUpDate') ? document.getElementById('followUpDate').value : '';
   if (!noFU_v && !fuDate_v) errors.push('• Follow-up Date — enter a date or tick "No follow-up"');
 
-  // PHQ-4 — required for Intake and Closing only (not Progress)
   const sessStage_phq = document.getElementById('sessionStage') ? document.getElementById('sessionStage').value : '';
-  const phqRequired = (sessStage_phq === 'Intake' || sessStage_phq === 'Closing');
+  const phqRequired = (sessStage_phq === 'Intake' || sessStage_phq === 'Closure');
   if (phqRequired) {
     const phq4_q1 = document.getElementById('phq4_q1') ? document.getElementById('phq4_q1').value : '';
     const phq4_q2 = document.getElementById('phq4_q2') ? document.getElementById('phq4_q2').value : '';
     const phq4_q3 = document.getElementById('phq4_q3') ? document.getElementById('phq4_q3').value : '';
     const phq4_q4 = document.getElementById('phq4_q4') ? document.getElementById('phq4_q4').value : '';
     if (!phq4_q1 || !phq4_q2 || !phq4_q3 || !phq4_q4) {
-      errors.push('• PHQ-4 — required for Intake and Closing sessions (all 4 questions)');
+      errors.push('• PHQ-4 — required for Intake and Closure sessions (all 4 questions)');
     }
   }
 
-  // ASQ — if visible, all 4 required
   const asqBlock = document.getElementById('asqBlock');
   const asqVisible = asqBlock && asqBlock.style.display !== 'none';
   if (asqVisible) {
@@ -2132,19 +2168,16 @@ function validateScreen2() {
     const asq2_v = document.getElementById('asq2') ? document.getElementById('asq2').value : '';
     const asq3_v = document.getElementById('asq3') ? document.getElementById('asq3').value : '';
     const asq4_v = document.getElementById('asq4') ? document.getElementById('asq4').value : '';
-    if (!asq1_v || !asq2_v || !asq3_v || !asq4_v) {
-      errors.push('• ASQ — all 4 suicide risk questions must be answered');
-    }
-    // Safety plan required if any ASQ = Yes
+    if (!asq1_v || !asq2_v || !asq3_v || !asq4_v) errors.push('• ASQ — all 4 suicide risk questions must be answered');
     const anyYes = asq1_v === 'Yes' || asq2_v === 'Yes' || asq3_v === 'Yes' || asq4_v === 'Yes';
     if (anyYes) {
       const spBlock   = document.getElementById('safetyPlanBlock');
       const spVisible = spBlock && spBlock.style.display !== 'none';
       if (spVisible) {
-        const spWarning = document.getElementById('spWarningSigns')      ? document.getElementById('spWarningSigns').value.trim()      : '';
-        const spCoping  = document.getElementById('spCopingStrategies')  ? document.getElementById('spCopingStrategies').value.trim()  : '';
-        const spPerson  = document.getElementById('spSafePerson')        ? document.getElementById('spSafePerson').value.trim()        : '';
-        const spAction  = document.getElementById('spCounsellorAction')  ? document.getElementById('spCounsellorAction').value.trim()  : '';
+        const spWarning = document.getElementById('spWarningSigns')?.value.trim();
+        const spCoping  = document.getElementById('spCopingStrategies')?.value.trim();
+        const spPerson  = document.getElementById('spSafePerson')?.value.trim();
+        const spAction  = document.getElementById('spCounsellorAction')?.value.trim();
         if (!spWarning) errors.push('• Safety Plan — Warning Signs required');
         if (!spCoping)  errors.push('• Safety Plan — Coping Strategies required');
         if (!spPerson)  errors.push('• Safety Plan — Safe Person required');
@@ -2158,15 +2191,14 @@ function validateScreen2() {
     return;
   }
 
-  // Auto-fill cs_next_contact from follow-up date/mode if not already filled
+  // Auto-fill cs_next_contact
   const fuDate = document.getElementById('followUpDate').value;
   const fuMode = document.getElementById('followUpMode').value;
   const noFU   = document.getElementById('noFollowUp').checked;
   const csNext = document.getElementById('cs_next_contact');
   if (csNext && !csNext.value) {
-    if (noFU) {
-      csNext.value = 'No follow-up required';
-    } else if (fuDate) {
+    if (noFU) csNext.value = 'No follow-up required';
+    else if (fuDate) {
       const fuFormatted = new Date(fuDate).toLocaleDateString('en-SG', { day:'2-digit', month:'short', year:'numeric' });
       csNext.value = fuFormatted + (fuMode ? ' — ' + fuMode : '');
     }
@@ -2178,18 +2210,18 @@ function validateScreen2() {
 function validateScreen1() {
   const errors = [];
   const counsellor_v = document.getElementById('counsellorSelect').value;
+  const client_v     = document.getElementById('clientSelect').value;
   const sessDate_v   = document.getElementById('sessionDate').value;
   const sessMode_v   = document.getElementById('sessionMode') ? document.getElementById('sessionMode').value : '';
   const sessDur_v    = document.getElementById('duration') ? document.getElementById('duration').value : '';
   const sessStage_v  = document.getElementById('sessionStage') ? document.getElementById('sessionStage').value : '';
-  const riskLevel_v  = document.getElementById('riskLevel') ? document.getElementById('riskLevel').value : '';
 
-  if (!counsellor_v)  errors.push('• Counsellor — select your name');
-  if (!sessDate_v)    errors.push('• Session Date — required');
-  if (!sessMode_v)    errors.push('• Mode — required');
+  if (!counsellor_v) errors.push('• Counsellor — select your name');
+  if (!client_v)     errors.push('• Client / Group — select a case from the dropdown');
+  if (!sessDate_v)   errors.push('• Session Date — required');
+  if (!sessMode_v)   errors.push('• Mode — required');
   if (!sessDur_v || sessDur_v === '0') errors.push('• Duration (minutes) — required');
-  if (!sessStage_v)   errors.push('• Session Stage — required');
-  if (!riskLevel_v)   errors.push('• Risk Level — required');
+  if (!sessStage_v)  errors.push('• Session Stage — required');
 
   if (errors.length > 0) {
     alert('Please complete these fields before continuing:\n\n' + errors.join('\n'));
@@ -2548,8 +2580,33 @@ function toggleCwReferral() {
 }
 
 function toggleGrpFollowUp() {
-  const val = document.getElementById('grpNoFollowUp').value;
-  document.getElementById('grpFollowUpDateBlock').style.display = val === 'Yes' ? 'block' : 'none';
+  const checked = document.getElementById('grpFollowUpGroup')?.checked;
+  document.getElementById('grpFollowUpDateBlock').style.display = checked ? 'block' : 'none';
+  if (checked) {
+    const noFUCheck = document.getElementById('grpNoFollowUpCheck');
+    if (noFUCheck) noFUCheck.checked = false;
+  }
+}
+
+function toggleGrpIndividualFollowUp() {
+  const checked = document.getElementById('grpFollowUpIndividual')?.checked;
+  document.getElementById('grpIndividualFollowUpBlock').style.display = checked ? 'block' : 'none';
+  if (checked) {
+    const noFUCheck = document.getElementById('grpNoFollowUpCheck');
+    if (noFUCheck) noFUCheck.checked = false;
+  }
+}
+
+function toggleGrpNoFollowUp() {
+  const checked = document.getElementById('grpNoFollowUpCheck')?.checked;
+  if (checked) {
+    // Uncheck other options if no-follow-up is selected
+    const grpFU = document.getElementById('grpFollowUpGroup');
+    const indFU = document.getElementById('grpFollowUpIndividual');
+    if (grpFU) { grpFU.checked = false; toggleGrpFollowUp(); }
+    if (indFU) { indFU.checked = false; toggleGrpIndividualFollowUp(); }
+  }
+  document.getElementById('grpNoFollowUp').value = checked ? 'Yes' : 'No';
 }
 
 // ── Individual Findings (group) ───────────────────────────────────────────────
@@ -2563,20 +2620,20 @@ function addIndividualFinding() {
   div.style.cssText = 'background:#F9F6F4;border:1px solid #E0D8D4;border-radius:8px;padding:12px;margin-bottom:10px;';
   div.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <div style="font-size:12px;font-weight:700;color:var(--crimson);">Member ${findingCount}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--crimson);">Participant ${findingCount}</div>
       <button type="button" onclick="document.getElementById('${id}').remove()" style="background:none;border:none;cursor:pointer;color:#999;font-size:16px;">✕</button>
     </div>
     <div class="form-grid" style="gap:10px;">
-      <div class="form-group"><label>Member Name / Initials</label><input type="text" id="${id}_name" placeholder="Name or initials"></div>
+      <div class="form-group"><label>Participant Name / Initials</label><input type="text" id="${id}_name" placeholder="Name or initials"></div>
       <div class="form-group"><label>Risk Level</label>
         <select id="${id}_risk"><option>Low</option><option>Medium</option><option>High</option><option>N/A</option></select>
       </div>
     </div>
     <div class="form-group" style="margin-top:8px;"><label>Key Findings &amp; Observations</label>
-      <textarea id="${id}_findings" rows="2" placeholder="What was observed for this member? Any specific themes or concerns?"></textarea>
+      <textarea id="${id}_findings" rows="2" placeholder="What was observed for this participant? Any specific themes or concerns?"></textarea>
     </div>
-    <div class="form-group" style="margin-top:8px;"><label>Plan / Follow-up for this member</label>
-      <textarea id="${id}_plan" rows="2" placeholder="Individual plan, referral, or follow-up needed…"></textarea>
+    <div class="form-group" style="margin-top:8px;"><label>Plan / Individual Follow-up</label>
+      <textarea id="${id}_plan" rows="2" placeholder="Individual plan, referral needed, or follow-up date for this participant…"></textarea>
     </div>
   `;
   container.appendChild(div);
