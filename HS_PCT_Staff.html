@@ -731,8 +731,8 @@ function previewMigrateSessions(input) {
 
     const warnings = [];
     parsedSessions.forEach((r,i) => {
-      const d = excelDateToISO(r['Date'] || r['date'] || '');
-      if (!d) warnings.push(`Row ${i+2}: Cannot parse date "${r['Date']||r['date']||''}"`);
+      const d = excelDateToISO(r['session_date'] || r['Date'] || r['date'] || '');
+      if (!d) warnings.push(`Row ${i+2}: Cannot parse date "${r['session_date']||r['Date']||r['date']||''}"`);
     });
 
     document.getElementById('migrateSessionsSummary').textContent = `${parsedSessions.length} session records found.`;
@@ -758,36 +758,34 @@ async function importSessions() {
 
   let success = 0, skipped = 0, failed = 0, errors = [];
 
-  // Get existing sessions per case if skip mode
   let existingCaseIds = new Set();
   if (skipExisting) {
     const { data: existingSess } = await db.from('sessions').select('case_id');
     existingCaseIds = new Set((existingSess || []).map(s => s.case_id));
   }
 
-  // Group sessions by case_id for skipping
   for (const r of parsedSessions) {
-    const caseId = (r['Case ID'] || r['case_id'] || '').trim().toUpperCase();
+    // Handle both migration CSV (snake_case) and direct Excel export column names
+    const caseId = (r['case_id'] || r['Case ID'] || '').trim().toUpperCase();
     if (!caseId) { failed++; continue; }
     if (skipExisting && existingCaseIds.has(caseId)) { skipped++; continue; }
 
-    const sessionDate = excelDateToISO(r['Date'] || r['date'] || '');
-    if (!sessionDate) { failed++; errors.push(`${caseId}: Could not parse date`); continue; }
+    const sessionDate = excelDateToISO(r['session_date'] || r['Date'] || r['date'] || '');
+    if (!sessionDate) { failed++; errors.push(`${caseId}: Could not parse date "${r['session_date']||r['Date']||''}"`); continue; }
 
-    const sessNo = parseInt(r['Contact #'] || r['Contact # (auto)'] || r['contact_no'] || '1') || 1;
-    const counsellor = r['Counsellor'] || r['counsellor'] || '';
+    const sessNo = parseInt(r['session_no'] || r['Contact #'] || r['Contact # (auto)'] || '1') || 1;
+    const counsellor = r['counsellor_name'] || r['Counsellor'] || '';
     const client = allClients.find(c => c.case_id === caseId);
-    const clientName = r['Client Name'] || r['Client Name (auto)'] || client?.name || '';
-    const mode = r['Mode'] || r['mode'] || '';
-    const duration = parseInt(r['Duration (min)'] || r['Duration'] || r['duration'] || '') || null;
-    const sudStart = r['Distress Start'] !== '' && r['Distress Start'] !== undefined ? parseInt(r['Distress Start'] || r['distress_start'] || '') : null;
-    const sudEnd = r['Distress End'] !== '' && r['Distress End'] !== undefined ? parseInt(r['Distress End'] || r['distress_end'] || '') : null;
-    const notes = r['Session Notes'] || r['Notes'] || r['notes'] || '';
-    const outcome = r['Outcome'] || r['outcome'] || 'Completed';
-    const fuDate = excelDateToISO(r['Follow-up Date'] || r['Follow-up  Date'] || r['follow_up_date'] || '');
-
-    // Infer stage: session 1 = Intake, otherwise Progress
-    const stage = sessNo === 1 ? 'Intake' : 'Progress';
+    const clientName = r['client_name'] || r['Client Name'] || r['Client Name (auto)'] || client?.name || '';
+    const mode = r['session_mode'] || r['Mode'] || '';
+    const duration = parseInt(r['duration_mins'] || r['Duration (min)'] || r['Duration'] || '') || null;
+    const sudStart = (r['sud_start'] !== undefined && r['sud_start'] !== '') ? parseInt(r['sud_start'] || r['Distress Start (0-10)'] || r['Distress Start'] || '') : null;
+    const sudEnd = (r['sud_end'] !== undefined && r['sud_end'] !== '') ? parseInt(r['sud_end'] || r['Distress End (0-10)'] || r['Distress End'] || '') : null;
+    const notes = r['soap_s'] || r['Session Notes'] || r['notes'] || '';
+    const outcome = r['session_outcome'] || r['Outcome'] || 'Completed';
+    const fuDate = excelDateToISO(r['follow_up_date'] || r['Follow-up Date (IF CASE CLOSED - Leave Blank)'] || r['Follow-up Date'] || r['Follow-up  Date'] || '');
+    const stage = r['session_stage'] || (sessNo === 1 ? 'Intake' : 'Progress');
+    const sessType = r['session_type'] || (caseId.startsWith('CG') ? 'Group' : 'Individual');
 
     const record = {
       case_id: caseId,
@@ -795,14 +793,14 @@ async function importSessions() {
       counsellor_name: counsellor,
       session_date: sessionDate,
       session_no: sessNo,
-      session_type: caseId.startsWith('CG') ? 'Group' : 'Individual',
+      session_type: sessType,
       session_stage: stage,
       session_mode: mode || null,
       duration_mins: duration,
       sud_start: isNaN(sudStart) ? null : sudStart,
       sud_end: isNaN(sudEnd) ? null : sudEnd,
       sud_change: (!isNaN(sudStart) && !isNaN(sudEnd)) ? (sudEnd - sudStart) : null,
-      soap_s: notes || null,  // Historical notes → S field
+      soap_s: notes || null,
       session_outcome: outcome || null,
       follow_up_date: fuDate,
       risk_level: client?.risk_level || null,
