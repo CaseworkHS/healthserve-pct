@@ -2076,8 +2076,10 @@ window.onload = async function() {
 
 
 function validateScreen3() {
-  const errors = [];
   const isGroup = document.getElementById('sessionType').value === 'Group';
+  console.log('validateScreen3 called, isGroup:', isGroup);
+
+  const errors = [];
 
   if (isGroup) {
     // Group: no mandatory CS fields — group CS is always generated if any field filled
@@ -2819,6 +2821,16 @@ function updateScreen2Strip() {
 
 // ── Generate output ───────────────────────────────────────────────────────────
 function generateOutput() {
+  try {
+    _generateOutput();
+  } catch(err) {
+    console.error('generateOutput error:', err);
+    alert('Generate Output error: ' + err.message + '\n\nLine: ' + err.stack?.split('\n')[1]);
+  }
+}
+
+function _generateOutput() {
+  console.log('_generateOutput started, currentClient:', currentClient?.case_id);
   if (!currentClient) {
     alert('Please select a client first.');
     goToScreen(1);
@@ -2835,6 +2847,7 @@ function generateOutput() {
   const consent = document.getElementById('consentObtained').value;
   const sudStart = document.getElementById('sudStart').value;
   const sudEnd = document.getElementById('sudEnd').value;
+  const isGroupSession = document.getElementById('sessionType').value === 'Group';
   const soapS = isGroupSession ? document.getElementById('groupSoapS').value : document.getElementById('soapS').value;
   const soapO = isGroupSession ? document.getElementById('groupSoapO').value : document.getElementById('soapO').value;
   const soapA = isGroupSession ? document.getElementById('groupSoapA').value : document.getElementById('soapA').value;
@@ -2846,7 +2859,6 @@ function generateOutput() {
   const isFlag = document.getElementById('redFlag').checked;
   const flagNote = document.getElementById('flagNote').value;
   const counsellor = document.getElementById('counsellorSelect').value;
-  const isGroupSession = document.getElementById('sessionType').value === 'Group';
 
   // Format date
   const dateFormatted = sessDate ? new Date(sessDate).toLocaleDateString('en-SG', {day:'2-digit',month:'long',year:'numeric'}) : '—';
