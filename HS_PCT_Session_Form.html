@@ -1578,11 +1578,11 @@
 
     <!-- Individual Findings -->
     <div class="card">
-      <div class="card-header" style="background:#5A4A2A; color:white;">Individual Findings — Optional (only for members needing follow-up or flagging)</div>
+      <div class="card-header" style="background:#5A4A2A; color:white;">Individual Findings — Optional (only for participants needing follow-up or flagging)</div>
       <div class="card-body">
-        <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;">Only complete this section for specific members who need individual attention, follow-up, or casework referral. Leave blank if all members are attended to at group level only.</div>
+        <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;">Only complete this section for specific participants who need individual attention, follow-up, or casework referral. Leave blank if all participants are attended to at group level only.</div>
         <div id="individualFindingsContainer"></div>
-        <button type="button" class="btn btn-secondary" style="margin-top:8px; font-size:12px;" onclick="addIndividualFinding()">+ Add Member Finding</button>
+        <button type="button" class="btn btn-secondary" style="margin-top:8px; font-size:12px;" onclick="addIndividualFinding()">+ Add Participant Finding</button>
       </div>
     </div>
 
@@ -1709,7 +1709,7 @@
           </label>
           <div id="grpFollowUpDateBlock" style="display:none; margin-left:26px;">
             <div class="form-grid">
-              <div class="form-group"><label>Next Group Session Date</label><input type="date" id="grpFollowUpDate"></div>
+              <div class="form-group"><label>Next Group Session Date</label><input type="date" id="grpFollowUpDate" onchange="autoFillGrpCsNext()"></div>
               <div class="form-group"><label>Mode</label>
                 <select id="grpFollowUpMode">
                   <option>F2F at HealthServe</option><option>F2F at Dormitory</option>
@@ -1866,7 +1866,7 @@
           </div>
           <div class="form-group">
             <label>Individual Findings (if any)</label>
-            <textarea id="grpCsIndividualFindings" rows="3" placeholder="For specific members needing further attention. Use initials only, not full names."></textarea>
+            <textarea id="grpCsIndividualFindings" rows="3" placeholder="For specific participants needing further attention. Use initials only, not full names."></textarea>
           </div>
           <div class="form-group">
             <label>Follow-up / Next Contact</label>
@@ -2077,8 +2077,17 @@ window.onload = async function() {
 
 function validateScreen3() {
   const errors = [];
+  const isGroup = document.getElementById('sessionType').value === 'Group';
 
-  // Case Summary — only required if CS = Yes
+  if (isGroup) {
+    // Group: no mandatory CS fields — group CS is always generated if any field filled
+    // Just auto-fill next contact if not already done
+    autoFillGrpCsNext();
+    generateOutput();
+    return;
+  }
+
+  // Individual: check CS fields only if CS Required = Yes
   const csType_v = document.getElementById('csRequired') ? document.getElementById('csRequired').value : 'No';
   if (csType_v === 'Yes') {
     const csPresenting_v = document.getElementById('cs_presenting')   ? document.getElementById('cs_presenting').value.trim()   : '';
@@ -2586,6 +2595,7 @@ function toggleGrpFollowUp() {
     const noFUCheck = document.getElementById('grpNoFollowUpCheck');
     if (noFUCheck) noFUCheck.checked = false;
   }
+  autoFillGrpCsNext();
 }
 
 function toggleGrpIndividualFollowUp() {
@@ -2600,13 +2610,28 @@ function toggleGrpIndividualFollowUp() {
 function toggleGrpNoFollowUp() {
   const checked = document.getElementById('grpNoFollowUpCheck')?.checked;
   if (checked) {
-    // Uncheck other options if no-follow-up is selected
     const grpFU = document.getElementById('grpFollowUpGroup');
     const indFU = document.getElementById('grpFollowUpIndividual');
-    if (grpFU) { grpFU.checked = false; toggleGrpFollowUp(); }
-    if (indFU) { indFU.checked = false; toggleGrpIndividualFollowUp(); }
+    if (grpFU) { grpFU.checked = false; document.getElementById('grpFollowUpDateBlock').style.display = 'none'; }
+    if (indFU) { indFU.checked = false; document.getElementById('grpIndividualFollowUpBlock').style.display = 'none'; }
   }
   document.getElementById('grpNoFollowUp').value = checked ? 'Yes' : 'No';
+  autoFillGrpCsNext();
+}
+
+function autoFillGrpCsNext() {
+  const grpNext = document.getElementById('grpCsNextContact');
+  if (!grpNext || grpNext.value) return; // don't overwrite if already filled
+  const noFUCheck = document.getElementById('grpNoFollowUpCheck')?.checked;
+  const grpFUCheck = document.getElementById('grpFollowUpGroup')?.checked;
+  const grpFuDate = document.getElementById('grpFollowUpDate')?.value;
+  const grpFuMode = document.getElementById('grpFollowUpMode')?.value;
+  if (noFUCheck) {
+    grpNext.value = 'No follow-up required';
+  } else if (grpFUCheck && grpFuDate) {
+    const fmt = new Date(grpFuDate).toLocaleDateString('en-SG', { day:'2-digit', month:'short', year:'numeric' });
+    grpNext.value = fmt + (grpFuMode ? ' — ' + grpFuMode : '');
+  }
 }
 
 // ── Individual Findings (group) ───────────────────────────────────────────────
@@ -2873,7 +2898,7 @@ function generateOutput() {
     if (findings.length > 0) {
       cr += `INDIVIDUAL FINDINGS\n${'─'.repeat(55)}\n`;
       findings.forEach((f, i) => {
-        cr += `${i+1}. ${f.name || 'Member'} (Risk: ${f.risk})\n`;
+        cr += `${i+1}. ${f.name || 'Participant'} (Risk: ${f.risk})\n`;
         if (f.findings) cr += `   Findings: ${f.findings}\n`;
         if (f.plan) cr += `   Plan: ${f.plan}\n`;
       });
@@ -3475,7 +3500,7 @@ function sendEmail() {
     const cwText = document.getElementById('cwReferralText')?.value || '(No details provided)';
     const c = currentClient;
     const cwSubject = `CASEWORK REFERRAL — ${c ? c.case_id : ''} — ${document.getElementById('sessionDate').value}`;
-    const cwBody = `CASEWORK SUPPORT REFERRAL\n${'─'.repeat(50)}\nGroup Case ID : ${c ? c.case_id : '—'}\nDate          : ${document.getElementById('sessionDate').value}\nCounsellor    : ${document.getElementById('counsellorSelect').value}\nSession No.   : ${document.getElementById('sessionNo').value}\n\nMEMBERS REQUIRING CASEWORK SUPPORT:\n${'─'.repeat(50)}\n${cwText}\n\nPlease follow up with the above member(s) as appropriate.\n\nThis referral was generated from the PCT Session Log.`;
+    const cwBody = `CASEWORK SUPPORT REFERRAL\n${'─'.repeat(50)}\nGroup Case ID : ${c ? c.case_id : '—'}\nDate          : ${document.getElementById('sessionDate').value}\nCounsellor    : ${document.getElementById('counsellorSelect').value}\nSession No.   : ${document.getElementById('sessionNo').value}\n\nPARTICIPANTS REQUIRING CASEWORK SUPPORT:\n${'─'.repeat(50)}\n${cwText}\n\nPlease follow up with the above participant(s) as appropriate.\n\nThis referral was generated from the PCT Session Log.`;
     setTimeout(() => {
       const cwMailto = `mailto:casework@healthserve.org.sg?cc=mentalhealth@healthserve.org.sg&subject=${encodeURIComponent(cwSubject)}&body=${encodeURIComponent(cwBody)}`;
       window.open(cwMailto);
