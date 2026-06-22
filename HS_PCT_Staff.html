@@ -85,6 +85,7 @@ input:focus,select:focus{outline:none;border-color:var(--crimson);}
     <button class="tab active" onclick="showTab('register',this)">👤 Client Register</button>
     <button class="tab" onclick="showTab('add',this)">➕ Add / Edit Case</button>
     <button class="tab" onclick="showTab('bulk',this)">📤 Bulk Upload</button>
+    <button class="tab" onclick="showTab('migrate',this)">🔄 Migrate 2026 Data</button>
     <button class="tab" onclick="showTab('close',this)">🔒 Close Cases</button>
     <button class="tab" onclick="showTab('audit',this)">🔍 My Audit Log</button>
   </div>
@@ -198,6 +199,90 @@ input:focus,select:focus{outline:none;border-color:var(--crimson);}
         <div id="uploadStatus" style="margin-top:12px;"></div>
       </div>
     </div>
+  </div>
+
+  <!-- MIGRATION TAB -->
+  <div id="tab-migrate" class="tab-panel" style="display:none;">
+
+    <!-- Step guide -->
+    <div style="background:#FFF8E1;border:1px solid #FFCC00;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;">
+      <div style="font-weight:700;color:#6B4C00;margin-bottom:8px;">2026 Data Migration — Step by Step</div>
+      <div style="color:#5A3E00;line-height:2.2;">
+        <strong>Step 1.</strong> Export <em>Client Register</em> tab from master Excel as CSV<br>
+        <strong>Step 2.</strong> Upload below → preview → import clients<br>
+        <strong>Step 3.</strong> Export <em>Sessions Log</em> tab from master Excel as CSV<br>
+        <strong>Step 4.</strong> Upload below → preview → import sessions<br>
+        <strong>Step 5.</strong> Add group cases manually via Add/Edit Case tab (only 6 — faster than CSV)<br>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#8C0303;font-weight:600;">⚠️ Do NOT include FIN numbers, contact numbers, or employer details in any export. These stay in the master Excel only.</div>
+    </div>
+
+    <!-- PHASE 1: Client Register -->
+    <div class="card">
+      <div class="card-header">Phase 1 — Import Client Register</div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:12px;font-size:12px;">
+          Export the <strong>Client Register</strong> tab from the master Excel as CSV. The tool will automatically map columns and convert Excel dates.
+          Expected columns: <code>Case ID, Status, Date Opened, Date Closed, Counsellor, Name, Age, Nationality, Language, Pass Type, Location / Dorm, Referral Source, Primary Issue, Overall Risk Level, Reason for Closure, Feedback Collected</code>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Upload Client Register CSV</label>
+          <input type="file" id="migrateClientsFile" accept=".csv" onchange="previewMigrateClients(this)">
+        </div>
+        <div id="migrateClientsPreview" style="display:none;">
+          <div id="migrateClientsWarning" class="alert alert-warning" style="display:none;margin-bottom:10px;"></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;" id="migrateClientsSummary"></div>
+          <div class="table-scroll" style="max-height:300px;overflow-y:auto;">
+            <table class="data-table" id="migrateClientsTable">
+              <thead><tr id="migrateClientsHeaders"></tr></thead>
+              <tbody id="migrateClientsRows"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+            <button class="btn btn-primary" id="importClientsBtn" onclick="importClients()">⬆ Import All Clients to Supabase</button>
+            <button class="btn btn-secondary" onclick="clearMigrateClients()">Clear</button>
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;">
+              <input type="checkbox" id="skipExistingClients" checked> Skip existing Case IDs (safe to re-run)
+            </label>
+          </div>
+        </div>
+        <div id="migrateClientsStatus" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
+    <!-- PHASE 2: Sessions Log -->
+    <div class="card">
+      <div class="card-header" style="background:#4A6741;color:white;">Phase 2 — Import Sessions Log</div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:12px;font-size:12px;">
+          Export the <strong>Sessions Log</strong> tab from the master Excel as CSV. Session Notes will be imported as the S (Subjective) field — no SOAP structure expected for historical sessions.
+          Expected columns: <code>Session ID, Case ID, Client Name, Counsellor, Date, Contact #, Mode, Duration (min), Distress Start, Distress End, Session Notes, Outcome, Follow-up Date</code>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Upload Sessions Log CSV</label>
+          <input type="file" id="migrateSessionsFile" accept=".csv" onchange="previewMigrateSessions(this)">
+        </div>
+        <div id="migrateSessionsPreview" style="display:none;">
+          <div id="migrateSessionsWarning" class="alert alert-warning" style="display:none;margin-bottom:10px;"></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;" id="migrateSessionsSummary"></div>
+          <div class="table-scroll" style="max-height:300px;overflow-y:auto;">
+            <table class="data-table" id="migrateSessionsTable">
+              <thead><tr id="migrateSessionsHeaders"></tr></thead>
+              <tbody id="migrateSessionsRows"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+            <button class="btn btn-primary" style="background:#4A6741;" id="importSessionsBtn" onclick="importSessions()">⬆ Import All Sessions to Supabase</button>
+            <button class="btn btn-secondary" onclick="clearMigrateSessions()">Clear</button>
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;">
+              <input type="checkbox" id="skipExistingSessions" checked> Skip sessions where Case ID already has sessions
+            </label>
+          </div>
+        </div>
+        <div id="migrateSessionsStatus" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
   </div>
 
   <!-- CLOSE CASES -->
@@ -485,6 +570,264 @@ function clearCSV() {
   document.getElementById('csvFile').value = '';
   document.getElementById('csvPreview').style.display = 'none';
   document.getElementById('uploadStatus').innerHTML = '';
+}
+
+// ── Migration ─────────────────────────────────────────────────────────────────
+let parsedClients = [], parsedSessions = [];
+
+function excelDateToISO(val) {
+  if (!val || val === '') return null;
+  const v = String(val).trim();
+  // Already a date string like DD-MMM-YYYY or YYYY-MM-DD
+  if (v.match(/^\d{4}-\d{2}-\d{2}$/)) return v;
+  if (v.match(/^\d{2}-[A-Za-z]{3}-\d{4}$/)) {
+    const months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+    const [d,m,y] = v.split('-');
+    const date = new Date(parseInt(y), months[m], parseInt(d));
+    return date.toISOString().split('T')[0];
+  }
+  // Excel serial number
+  const serial = parseFloat(v);
+  if (!isNaN(serial) && serial > 1000) {
+    const date = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+    return date.toISOString().split('T')[0];
+  }
+  return null;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQuotes = !inQuotes; }
+    else if (line[i] === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+    else { current += line[i]; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function previewMigrateClients(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.trim().split('\n').filter(l => l.trim());
+    const headers = parseCSVLine(lines[0]);
+    const rows = lines.slice(1).map(l => parseCSVLine(l));
+
+    parsedClients = rows.map(r => {
+      const row = {};
+      headers.forEach((h,i) => { row[h.trim()] = (r[i] || '').trim(); });
+      return row;
+    }).filter(r => r['Case ID'] || r['case_id'] || r['CASE ID']);
+
+    const warnings = [];
+    parsedClients.forEach((r,i) => {
+      const caseId = r['Case ID'] || r['case_id'] || '';
+      if (!caseId) warnings.push(`Row ${i+2}: No Case ID`);
+      if (!r['Name'] && !r['name']) warnings.push(`Row ${i+2}: No client name`);
+    });
+
+    document.getElementById('migrateClientsSummary').textContent = `${parsedClients.length} client records found.`;
+    const warnEl = document.getElementById('migrateClientsWarning');
+    if (warnings.length) { warnEl.textContent = warnings.slice(0,5).join(' | ') + (warnings.length > 5 ? ` … and ${warnings.length-5} more` : ''); warnEl.style.display = 'block'; }
+    else { warnEl.style.display = 'none'; }
+
+    document.getElementById('migrateClientsHeaders').innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+    document.getElementById('migrateClientsRows').innerHTML = parsedClients.slice(0,5).map(r =>
+      `<tr>${headers.map(h => `<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r[h]||''}</td>`).join('')}</tr>`
+    ).join('') + (parsedClients.length > 5 ? `<tr><td colspan="${headers.length}" style="color:var(--text-gray);font-style:italic;">… and ${parsedClients.length-5} more rows</td></tr>` : '');
+    document.getElementById('migrateClientsPreview').style.display = 'block';
+  };
+  reader.readAsText(file);
+}
+
+async function importClients() {
+  if (!parsedClients.length) return;
+  const btn = document.getElementById('importClientsBtn');
+  const statusEl = document.getElementById('migrateClientsStatus');
+  const skipExisting = document.getElementById('skipExistingClients').checked;
+  btn.disabled = true; btn.textContent = 'Importing…';
+
+  let success = 0, skipped = 0, failed = 0, errors = [];
+
+  // Get existing case IDs
+  const { data: existing } = await db.from('clients').select('case_id');
+  const existingIds = new Set((existing || []).map(c => c.case_id));
+
+  for (const r of parsedClients) {
+    const caseId = (r['Case ID'] || r['case_id'] || '').trim().toUpperCase();
+    if (!caseId) { failed++; continue; }
+    if (skipExisting && existingIds.has(caseId)) { skipped++; continue; }
+
+    const counsellorName = r['Counsellor'] || r['counsellor'] || '';
+    const profile = allProfiles.find(p => p.full_name === counsellorName);
+
+    const openedDate = excelDateToISO(r['Date Opened'] || r['date_opened'] || '');
+    const closedDate = excelDateToISO(r['Date Closed'] || r['date_closed'] || '');
+    const status = (r['Status'] || r['status'] || 'Active');
+    const riskLevel = r['Overall Risk Level'] || r['Overall Risk  Level'] || r['risk_level'] || null;
+    const issue = r['Primary Issue'] || r['primary_issue'] || null;
+    const referral = r['Referral Source'] || r['referral_source'] || r['referral'] || null;
+    const closureReason = r['Reason for Closure'] || r['reason_for_closure'] || null;
+    const feedbackCollected = (r['Feedback Collected'] || '').toLowerCase() === 'yes';
+    const age = parseInt(r['Age'] || '') || null;
+    const phq4 = parseInt(r['PHQ-4 Intake'] || r['PHQ-4  Intake'] || '') || null;
+    const cwss = (r['CWSS'] || '').toLowerCase() === 'yes';
+
+    const record = {
+      case_id: caseId,
+      name: r['Name'] || r['name'] || caseId,
+      status: status === 'Closed' ? 'Closed' : 'Active',
+      counsellor_name: counsellorName || null,
+      assigned_to: profile?.id || null,
+      case_type: caseId.startsWith('CG') ? 'Group' : 'Individual',
+      issue, risk_level: riskLevel, nationality: r['Nationality'] || null,
+      language: r['Language'] || null, referral,
+      location: r['Location / Dorm'] || r['Location'] || r['location'] || null,
+      pass_type: r['Pass Type'] || null,
+      stage: status === 'Closed' ? 'Closure' : 'Progress',
+      cs_required: !!(referral && referral.startsWith('Ext')),
+      closed_at: closedDate ? new Date(closedDate).toISOString() : null,
+      created_at: openedDate ? new Date(openedDate).toISOString() : new Date().toISOString(),
+      age, phq4_intake_score: phq4, cwss_involved: cwss,
+      total_sessions: 0, next_session_no: 1,
+    };
+
+    const { error } = await db.from('clients').upsert(record, { onConflict: 'case_id' });
+    if (error) { failed++; errors.push(`${caseId}: ${error.message}`); } else { success++; }
+  }
+
+  const { data } = await db.from('clients').select('*').order('case_id');
+  allClients = data || [];
+  filterRegister(); renderCloseList(allClients.filter(c => c.status === 'Active')); updateStats();
+
+  const cls = failed ? 'alert-warning' : 'alert-success';
+  statusEl.innerHTML = `<div class="alert ${cls}">✓ ${success} clients imported. ${skipped} skipped (already exist). ${failed} failed.${errors.length ? '<br><small>'+errors.slice(0,3).join('<br>')+'</small>' : ''}</div>`;
+  btn.disabled = false; btn.textContent = '⬆ Import All Clients to Supabase';
+}
+
+function clearMigrateClients() {
+  parsedClients = [];
+  document.getElementById('migrateClientsFile').value = '';
+  document.getElementById('migrateClientsPreview').style.display = 'none';
+  document.getElementById('migrateClientsStatus').innerHTML = '';
+}
+
+function previewMigrateSessions(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.trim().split('\n').filter(l => l.trim());
+    const headers = parseCSVLine(lines[0]);
+    const rows = lines.slice(1).map(l => parseCSVLine(l));
+
+    parsedSessions = rows.map(r => {
+      const row = {};
+      headers.forEach((h,i) => { row[h.trim()] = (r[i] || '').trim(); });
+      return row;
+    }).filter(r => (r['Case ID'] || r['case_id'] || '').trim());
+
+    const warnings = [];
+    parsedSessions.forEach((r,i) => {
+      const d = excelDateToISO(r['Date'] || r['date'] || '');
+      if (!d) warnings.push(`Row ${i+2}: Cannot parse date "${r['Date']||r['date']||''}"`);
+    });
+
+    document.getElementById('migrateSessionsSummary').textContent = `${parsedSessions.length} session records found.`;
+    const warnEl = document.getElementById('migrateSessionsWarning');
+    if (warnings.length) { warnEl.textContent = warnings.slice(0,5).join(' | ') + (warnings.length > 5 ? ` … and ${warnings.length-5} more` : ''); warnEl.style.display = 'block'; }
+    else { warnEl.style.display = 'none'; }
+
+    document.getElementById('migrateSessionsHeaders').innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+    document.getElementById('migrateSessionsRows').innerHTML = parsedSessions.slice(0,5).map(r =>
+      `<tr>${headers.map(h => `<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r[h]||''}</td>`).join('')}</tr>`
+    ).join('') + (parsedSessions.length > 5 ? `<tr><td colspan="${headers.length}" style="color:var(--text-gray);font-style:italic;">… and ${parsedSessions.length-5} more rows</td></tr>` : '');
+    document.getElementById('migrateSessionsPreview').style.display = 'block';
+  };
+  reader.readAsText(file);
+}
+
+async function importSessions() {
+  if (!parsedSessions.length) return;
+  const btn = document.getElementById('importSessionsBtn');
+  const statusEl = document.getElementById('migrateSessionsStatus');
+  const skipExisting = document.getElementById('skipExistingSessions').checked;
+  btn.disabled = true; btn.textContent = 'Importing…';
+
+  let success = 0, skipped = 0, failed = 0, errors = [];
+
+  // Get existing sessions per case if skip mode
+  let existingCaseIds = new Set();
+  if (skipExisting) {
+    const { data: existingSess } = await db.from('sessions').select('case_id');
+    existingCaseIds = new Set((existingSess || []).map(s => s.case_id));
+  }
+
+  // Group sessions by case_id for skipping
+  for (const r of parsedSessions) {
+    const caseId = (r['Case ID'] || r['case_id'] || '').trim().toUpperCase();
+    if (!caseId) { failed++; continue; }
+    if (skipExisting && existingCaseIds.has(caseId)) { skipped++; continue; }
+
+    const sessionDate = excelDateToISO(r['Date'] || r['date'] || '');
+    if (!sessionDate) { failed++; errors.push(`${caseId}: Could not parse date`); continue; }
+
+    const sessNo = parseInt(r['Contact #'] || r['Contact # (auto)'] || r['contact_no'] || '1') || 1;
+    const counsellor = r['Counsellor'] || r['counsellor'] || '';
+    const client = allClients.find(c => c.case_id === caseId);
+    const clientName = r['Client Name'] || r['Client Name (auto)'] || client?.name || '';
+    const mode = r['Mode'] || r['mode'] || '';
+    const duration = parseInt(r['Duration (min)'] || r['Duration'] || r['duration'] || '') || null;
+    const sudStart = r['Distress Start'] !== '' && r['Distress Start'] !== undefined ? parseInt(r['Distress Start'] || r['distress_start'] || '') : null;
+    const sudEnd = r['Distress End'] !== '' && r['Distress End'] !== undefined ? parseInt(r['Distress End'] || r['distress_end'] || '') : null;
+    const notes = r['Session Notes'] || r['Notes'] || r['notes'] || '';
+    const outcome = r['Outcome'] || r['outcome'] || 'Completed';
+    const fuDate = excelDateToISO(r['Follow-up Date'] || r['Follow-up  Date'] || r['follow_up_date'] || '');
+
+    // Infer stage: session 1 = Intake, otherwise Progress
+    const stage = sessNo === 1 ? 'Intake' : 'Progress';
+
+    const record = {
+      case_id: caseId,
+      client_name: clientName,
+      counsellor_name: counsellor,
+      session_date: sessionDate,
+      session_no: sessNo,
+      session_type: caseId.startsWith('CG') ? 'Group' : 'Individual',
+      session_stage: stage,
+      session_mode: mode || null,
+      duration_mins: duration,
+      sud_start: isNaN(sudStart) ? null : sudStart,
+      sud_end: isNaN(sudEnd) ? null : sudEnd,
+      sud_change: (!isNaN(sudStart) && !isNaN(sudEnd)) ? (sudEnd - sudStart) : null,
+      soap_s: notes || null,  // Historical notes → S field
+      session_outcome: outcome || null,
+      follow_up_date: fuDate,
+      risk_level: client?.risk_level || null,
+      consent_obtained: 'Verbal (historical record)',
+      imported_from_excel: true,
+    };
+
+    const { error } = await db.from('sessions').insert(record);
+    if (error) { failed++; errors.push(`${caseId} S-${sessNo}: ${error.message}`); } else { success++; }
+  }
+
+  const cls = failed ? 'alert-warning' : 'alert-success';
+  statusEl.innerHTML = `<div class="alert ${cls}">✓ ${success} sessions imported. ${skipped} skipped. ${failed} failed.${errors.length ? '<br><small>'+errors.slice(0,3).join('<br>')+'</small>' : ''}</div>`;
+
+  const { data } = await db.from('clients').select('*').order('case_id');
+  allClients = data || [];
+  updateStats();
+  btn.disabled = false; btn.textContent = '⬆ Import All Sessions to Supabase';
+}
+
+function clearMigrateSessions() {
+  parsedSessions = [];
+  document.getElementById('migrateSessionsFile').value = '';
+  document.getElementById('migrateSessionsPreview').style.display = 'none';
+  document.getElementById('migrateSessionsStatus').innerHTML = '';
 }
 
 // ── Close Cases ───────────────────────────────────────────────────────────────
