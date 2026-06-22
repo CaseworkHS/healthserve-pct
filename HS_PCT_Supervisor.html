@@ -206,6 +206,27 @@ input:focus,select:focus{outline:none;border-color:var(--crimson);}
       </div>
     </div>
 
+    <!-- Demographic & referral breakdown -->
+    <div style="font-size:13px;font-weight:700;color:var(--crimson);margin:8px 0 12px;text-transform:uppercase;letter-spacing:.5px;">Client Demographics & Referral Sources</div>
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-header gold">Language (Active & New Cases)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartLanguage"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header gold">Nationality (Active & New Cases)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartNationality"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header gold">Referral Source (All Cases, Period)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartReferral"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header gold">Primary Issue (All Cases, Period)</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartIssue"></canvas></div></div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-header gold">Closure Outcomes (Cases with PHQ-4 at both Intake & Closure)</div>
       <div class="card-body">
@@ -660,6 +681,56 @@ async function loadOutcomes() {
     type: 'bar',
     data: { labels: months, datasets: [{ label: 'Sessions', data: monthly, backgroundColor: '#8C030366', borderColor: '#8C0303', borderWidth: 1 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+
+  // ── Demographics & Referral charts ─────────────────────────────────────────
+  const fromDate2 = getDateFilter();
+  const periodClients = fromDate2
+    ? allClients.filter(c => c.created_at >= fromDate2 && c.case_type !== 'Group')
+    : allClients.filter(c => c.case_type !== 'Group');
+
+  // Language
+  const langMap = {};
+  periodClients.forEach(c => { const l = (c.language || 'Unknown').split('/')[0].trim(); langMap[l] = (langMap[l]||0)+1; });
+  const langSorted = Object.entries(langMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  destroyChart('chartLanguage');
+  charts['chartLanguage'] = new Chart(document.getElementById('chartLanguage'), {
+    type: 'bar',
+    data: { labels: langSorted.map(e=>e[0]), datasets: [{ data: langSorted.map(e=>e[1]), backgroundColor: ['#8C0303','#FFCC00','#2D7A4F','#4A6741','#7B0000','#1B4D3E','#5A3E00','#555'].slice(0,langSorted.length) }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { ticks: { precision: 0 }, title: { display: true, text: 'Cases' } } } }
+  });
+
+  // Nationality
+  const natMap = {};
+  periodClients.forEach(c => { const n = c.nationality || 'Unknown'; natMap[n] = (natMap[n]||0)+1; });
+  const natSorted = Object.entries(natMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  destroyChart('chartNationality');
+  charts['chartNationality'] = new Chart(document.getElementById('chartNationality'), {
+    type: 'doughnut',
+    data: { labels: natSorted.map(e=>e[0]), datasets: [{ data: natSorted.map(e=>e[1]), backgroundColor: ['#8C0303','#FFCC00','#2D7A4F','#4A6741','#7B0000','#1B4D3E','#5A3E00','#555'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+  });
+
+  // Referral source
+  const refMap = {};
+  periodClients.forEach(c => { const r = c.referral || 'Unknown'; refMap[r] = (refMap[r]||0)+1; });
+  const refSorted = Object.entries(refMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart('chartReferral');
+  charts['chartReferral'] = new Chart(document.getElementById('chartReferral'), {
+    type: 'bar',
+    data: { labels: refSorted.map(e=>e[0]), datasets: [{ data: refSorted.map(e=>e[1]), backgroundColor: '#8C030366', borderColor: '#8C0303', borderWidth: 1 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { ticks: { precision: 0 }, title: { display: true, text: 'Cases' } } } }
+  });
+
+  // Primary issue
+  const issueMap = {};
+  periodClients.forEach(c => { const i = c.issue || 'Not recorded'; issueMap[i] = (issueMap[i]||0)+1; });
+  const issueSorted = Object.entries(issueMap).sort((a,b)=>b[1]-a[1]);
+  destroyChart('chartIssue');
+  charts['chartIssue'] = new Chart(document.getElementById('chartIssue'), {
+    type: 'bar',
+    data: { labels: issueSorted.map(e=>e[0]), datasets: [{ data: issueSorted.map(e=>e[1]), backgroundColor: ['#8C0303','#FFCC00','#2D7A4F','#4A6741','#7B0000','#1B4D3E','#5A3E00','#555','#FF9800','#666'].slice(0,issueSorted.length) }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { ticks: { precision: 0 }, title: { display: true, text: 'Cases' } } } }
   });
 
   // PHQ-4 table
