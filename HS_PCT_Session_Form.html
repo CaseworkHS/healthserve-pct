@@ -687,10 +687,10 @@
 </div>
 
 <div class="progress-bar">
-  <div class="progress-step active" id="step1-tab" onclick="goToScreen(1)">1 — Session Details</div>
-  <div class="progress-step" id="step2-tab" onclick="goToScreen(2)">2 — Clinical Notes</div>
-  <div class="progress-step" id="step3-tab" onclick="goToScreen(3)">3 — Case Summary</div>
-  <div class="progress-step" id="step4-tab" onclick="goToScreen(4)">4 — Output</div>
+  <div class="progress-step active" id="step1-tab" onclick="safeGoToScreen(1)">1 — Session Details</div>
+  <div class="progress-step" id="step2-tab" onclick="safeGoToScreen(2)">2 — Clinical Notes</div>
+  <div class="progress-step" id="step3-tab" onclick="safeGoToScreen(3)">3 — Case Summary</div>
+  <div class="progress-step" id="step4-tab" onclick="safeGoToScreen(4)">4 — Output</div>
 </div>
 
 <div class="container">
@@ -1726,7 +1726,7 @@
           <div id="grpIndividualFollowUpBlock" style="display:none; margin-left:26px;">
             <div class="form-group">
               <label>Individual follow-up details</label>
-              <textarea id="grpIndividualFollowUpText" rows="2" placeholder="Which participant(s) and what follow-up is needed? e.g. Participant A — referral to individual counselling; Participant B — check-in call next week"></textarea>
+              <textarea id="grpIndividualFollowUpText" rows="2" placeholder="Which participant(s) and what follow-up is needed? e.g. Participant A — referral to individual counselling; Participant B — check-in call next week" oninput="autoFillGrpCsNext()"></textarea>
             </div>
           </div>
 
@@ -2239,6 +2239,13 @@ function validateScreen1() {
   goToScreen(2);
 }
 
+function safeGoToScreen(n) {
+  // Header tabs can only go BACK (to already-completed screens)
+  // Forward navigation must go through the validate buttons
+  if (n >= currentScreen) return;
+  goToScreen(n);
+}
+
 function goToScreen(n) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen' + n).classList.add('active');
@@ -2605,6 +2612,7 @@ function toggleGrpIndividualFollowUp() {
     const noFUCheck = document.getElementById('grpNoFollowUpCheck');
     if (noFUCheck) noFUCheck.checked = false;
   }
+  autoFillGrpCsNext();
 }
 
 function toggleGrpNoFollowUp() {
@@ -2621,16 +2629,26 @@ function toggleGrpNoFollowUp() {
 
 function autoFillGrpCsNext() {
   const grpNext = document.getElementById('grpCsNextContact');
-  if (!grpNext || grpNext.value) return; // don't overwrite if already filled
-  const noFUCheck = document.getElementById('grpNoFollowUpCheck')?.checked;
+  if (!grpNext) return;
+  // Always recalculate from current state — counsellor can edit manually on Screen 3
+  const noFUCheck  = document.getElementById('grpNoFollowUpCheck')?.checked;
   const grpFUCheck = document.getElementById('grpFollowUpGroup')?.checked;
-  const grpFuDate = document.getElementById('grpFollowUpDate')?.value;
-  const grpFuMode = document.getElementById('grpFollowUpMode')?.value;
-  if (noFUCheck) {
+  const indFUCheck = document.getElementById('grpFollowUpIndividual')?.checked;
+  const grpFuDate  = document.getElementById('grpFollowUpDate')?.value;
+  const grpFuMode  = document.getElementById('grpFollowUpMode')?.value;
+  const indText    = document.getElementById('grpIndividualFollowUpText')?.value || '';
+
+  if (noFUCheck && !grpFUCheck && !indFUCheck) {
     grpNext.value = 'No follow-up required';
   } else if (grpFUCheck && grpFuDate) {
     const fmt = new Date(grpFuDate).toLocaleDateString('en-SG', { day:'2-digit', month:'short', year:'numeric' });
-    grpNext.value = fmt + (grpFuMode ? ' — ' + grpFuMode : '');
+    let val = fmt + (grpFuMode ? ' — ' + grpFuMode : '');
+    if (indFUCheck && indText) val += '\nIndividual follow-up: ' + indText;
+    grpNext.value = val;
+  } else if (indFUCheck && indText) {
+    grpNext.value = 'Individual follow-up: ' + indText;
+  } else {
+    grpNext.value = ''; // clear if nothing is ticked
   }
 }
 
