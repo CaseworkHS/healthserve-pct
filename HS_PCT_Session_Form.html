@@ -713,8 +713,8 @@
         <div class="form-group">
           <label>Session Type</label>
           <div class="pill-group" id="sessionTypePills">
-            <div class="pill stage selected" data-val="Individual" onclick="selectPill(this,'sessionTypePills','sessionType');filterClients()">Individual</div>
-            <div class="pill stage" data-val="Group" onclick="selectPill(this,'sessionTypePills','sessionType');filterClients()">Group</div>
+            <div class="pill stage selected" data-val="Individual" onclick="selectPill(this,'sessionTypePills','sessionType');filterClients();toggleSessionType()">Individual</div>
+            <div class="pill stage" data-val="Group" onclick="selectPill(this,'sessionTypePills','sessionType');filterClients();toggleSessionType()">Group</div>
           </div>
           <input type="hidden" id="sessionType" value="Individual">
         </div>
@@ -862,7 +862,10 @@
     </div>
   </div>
 
-  <!-- SUD -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- INDIVIDUAL SESSION CONTENT -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div id="individualClinical">
   <div class="card">
     <div class="card-header">Distress Level (SUD 0–10)</div>
     <div class="card-body">
@@ -1397,6 +1400,374 @@
     </div>
   </div>
 
+  </div><!-- /individualClinical -->
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- GROUP SESSION CONTENT -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div id="groupClinical" style="display:none;">
+
+    <!-- PRE-SESSION banner -->
+    <div style="background:#8C0303; color:white; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px;">
+      <strong>📋 PRE-SESSION — ask these BEFORE beginning the group session</strong>
+    </div>
+
+    <!-- Group Details -->
+    <div class="card">
+      <div class="card-header">Group Session Details</div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Topic Discussed</label>
+            <select id="groupTopic">
+              <option value="">— Select —</option>
+              <option>Grief &amp; Bereavement</option>
+              <option>Rapport Building</option>
+              <option>Stress &amp; Coping</option>
+              <option>Work Injury Support</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>No. of Participants</label>
+            <input type="number" id="groupParticipants" min="1" max="50" placeholder="e.g. 12" style="width:120px;">
+          </div>
+          <div class="form-group">
+            <label>Language Mode</label>
+            <select id="groupLanguageMode">
+              <option value="">— Select —</option>
+              <option>Counsellor speaks workers' native language</option>
+              <option>Interpreter assisted</option>
+              <option>Bilingual — both</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Cause of Death (if grief debrief)</label>
+            <select id="groupCauseOfDeath">
+              <option value="">— N/A or unknown —</option>
+              <option>Workplace accident</option>
+              <option>Suicide</option>
+              <option>Natural death</option>
+              <option>Medical issues</option>
+              <option>Not sure / Unknown</option>
+            </select>
+          </div>
+        </div>
+        <!-- Age groups -->
+        <div style="margin-top:12px;">
+          <label style="font-size:11px; font-weight:600; color:var(--crimson); text-transform:uppercase; letter-spacing:.4px;">Age Distribution (raise hands — record counts)</label>
+          <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap;">
+            <div class="form-group"><label>Under 30</label><input type="number" id="grpAgeUnder30" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>30–50</label><input type="number" id="grpAge30to50" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>Over 50</label><input type="number" id="grpAgeOver50" min="0" style="width:80px;" placeholder="0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRE-SESSION Assessment -->
+    <div class="card">
+      <div class="card-header" style="background:#7B0000; color:white;">PRE-SESSION — Participant Wellbeing (record group counts)</div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:14px; font-size:12px;">Ask each question aloud. Participants raise hands. Record the count for each response.</div>
+
+        <!-- Appetite -->
+        <div style="background:#F9F6F4; border-radius:6px; padding:12px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">In the past 2 weeks — how many have had <em>less or no appetite</em>?</div>
+          <div style="display:flex; gap:16px; flex-wrap:wrap;">
+            <div class="form-group"><label>😢 Yes</label><input type="number" id="preAppetiteYes" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>😊 No</label><input type="number" id="preAppetiteNo" min="0" style="width:80px;" placeholder="0"></div>
+          </div>
+        </div>
+
+        <!-- Sleep -->
+        <div style="background:#F9F6F4; border-radius:6px; padding:12px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">In the past 2 weeks — how has your <em>sleep</em> been?</div>
+          <div style="display:flex; gap:16px; flex-wrap:wrap;">
+            <div class="form-group"><label>≤5 hrs</label><input type="number" id="preSleepUnder5" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>6–7 hrs</label><input type="number" id="preSleep6to7" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>7+ hrs</label><input type="number" id="preSleepOver7" min="0" style="width:80px;" placeholder="0"></div>
+          </div>
+        </div>
+
+        <!-- Affected by death -->
+        <div style="background:#F9F6F4; border-radius:6px; padding:12px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">How many feel <em>affected</em> (sad or troubled) by the death/incident?</div>
+          <div style="display:flex; gap:16px; flex-wrap:wrap;">
+            <div class="form-group"><label>😢 Yes</label><input type="number" id="preAffectedYes" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>😊 No</label><input type="number" id="preAffectedNo" min="0" style="width:80px;" placeholder="0"></div>
+          </div>
+        </div>
+
+        <!-- Mood before -->
+        <div style="background:#F9F6F4; border-radius:6px; padding:12px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">How do you feel <em>now, before the session</em>? (raise hand for each)</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <div class="form-group"><label>😀 Happy</label><input type="number" id="preMoodHappy" min="0" style="width:75px;" placeholder="0"></div>
+            <div class="form-group"><label>😐 Calm/OK</label><input type="number" id="preMoodCalm" min="0" style="width:75px;" placeholder="0"></div>
+            <div class="form-group"><label>😟 Sad</label><input type="number" id="preMoodSad" min="0" style="width:75px;" placeholder="0"></div>
+            <div class="form-group"><label>😕 Worried</label><input type="number" id="preMoodWorried" min="0" style="width:75px;" placeholder="0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SESSION section banner -->
+    <div style="background:#2D5A2D; color:white; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px;">
+      <strong>📝 SESSION NOTES — complete during and after the session</strong>
+    </div>
+
+    <!-- Group Observation -->
+    <div class="card">
+      <div class="card-header" style="background:#4A6741; color:white;">Group Observation</div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>Overall Group — Affect, Behaviour &amp; Communication</label>
+          <textarea id="groupObservation" rows="4" placeholder="Describe the group's emotional tone, affect and attitude (e.g. dejected, dull, apathetic), behaviour, communication patterns, level of engagement…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group SOAP -->
+    <div class="card">
+      <div class="card-header" style="background:#4A6741; color:white;">Group Case Formulation (SOAP)</div>
+      <div class="card-body">
+        <div class="form-grid full" style="gap:12px;">
+          <div class="form-group">
+            <label>S — Subjective (themes emerging from the group)</label>
+            <textarea id="groupSoapS" rows="3" placeholder="Client statements and themes that emerged from the group session…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>O — Objective (group's psychological state and coping)</label>
+            <textarea id="groupSoapO" rows="3" placeholder="Group mood, coping patterns, interaction dynamics observed…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>A — Assessment</label>
+            <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+              <div class="form-group" style="margin:0;">
+                <label>Stage of Change</label>
+                <select id="groupStageOfChange">
+                  <option value="">— Select —</option>
+                  <option>Pre-contemplation</option>
+                  <option>Contemplation</option>
+                  <option>Preparation</option>
+                  <option>Action</option>
+                  <option>Maintenance</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label>Group Risk Level</label>
+                <div class="pill-group" id="groupRiskPills" style="margin:4px 0 0;">
+                  <div class="pill outcome selected" data-val="Low" onclick="selectPill(this,'groupRiskPills','groupRisk')">Low</div>
+                  <div class="pill outcome" data-val="Medium" onclick="selectPill(this,'groupRiskPills','groupRisk')">Medium</div>
+                  <div class="pill outcome" data-val="High" onclick="selectPill(this,'groupRiskPills','groupRisk')">High</div>
+                  <div class="pill outcome" data-val="NA" onclick="selectPill(this,'groupRiskPills','groupRisk')">N/A</div>
+                </div>
+                <input type="hidden" id="groupRisk" value="Low">
+              </div>
+            </div>
+            <textarea id="groupSoapA" rows="2" placeholder="Overall assessment of the group's psychological state, desired change, any other risks noted…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>P — Plan (goals, counselling approach, follow-up recommendations)</label>
+            <textarea id="groupSoapP" rows="3" placeholder="Short/long term goals, counselling approach used (e.g. CBT, narrative, mindfulness), recommendations, follow-up…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Individual Findings -->
+    <div class="card">
+      <div class="card-header" style="background:#5A4A2A; color:white;">Individual Findings — Optional (only for members needing follow-up or flagging)</div>
+      <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;">Only complete this section for specific members who need individual attention, follow-up, or casework referral. Leave blank if all members are attended to at group level only.</div>
+        <div id="individualFindingsContainer"></div>
+        <button type="button" class="btn btn-secondary" style="margin-top:8px; font-size:12px;" onclick="addIndividualFinding()">+ Add Member Finding</button>
+      </div>
+    </div>
+
+    <!-- CW Referral -->
+    <div class="card">
+      <div class="card-header" style="background:#8C0303; color:white;">Casework Referral</div>
+      <div class="card-body">
+        <label style="font-size:13px; font-weight:600;">Does any member need casework support?</label>
+        <div class="pill-group" id="cwReferralPills" style="margin:8px 0;">
+          <div class="pill outcome selected" data-val="No" onclick="selectPill(this,'cwReferralPills','groupCwReferral');toggleCwReferral()">No</div>
+          <div class="pill outcome" data-val="Yes" onclick="selectPill(this,'cwReferralPills','groupCwReferral');toggleCwReferral()">Yes — refer to casework</div>
+        </div>
+        <input type="hidden" id="groupCwReferral" value="No">
+        <div id="cwReferralDetails" style="display:none; margin-top:10px;">
+          <div class="alert alert-warning" style="margin-bottom:10px; font-size:12px;">A separate referral email will automatically be sent to <strong>casework@healthserve.org.sg</strong> when you click Send Email.</div>
+          <div class="form-group">
+            <label>What casework support is needed?</label>
+            <textarea id="cwReferralText" rows="3" placeholder="Describe the support needed — include member name(s) and specific concern. This will appear in the referral email to the casework team."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group Outcome & Follow-up -->
+    <div class="card">
+      <div class="card-header">Group Outcome &amp; Follow-Up</div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Session Outcome</label>
+            <div class="pill-group" id="grpOutcomePills">
+              <div class="pill outcome selected" data-val="Completed" onclick="selectPill(this,'grpOutcomePills','grpOutcome')">Completed</div>
+              <div class="pill outcome" data-val="Incomplete" onclick="selectPill(this,'grpOutcomePills','grpOutcome')">Incomplete</div>
+            </div>
+            <input type="hidden" id="grpOutcome" value="Completed">
+          </div>
+          <div class="form-group">
+            <label>Group Follow-up</label>
+            <div class="pill-group" id="grpFollowUpPills">
+              <div class="pill outcome selected" data-val="No" onclick="selectPill(this,'grpFollowUpPills','grpNoFollowUp');toggleGrpFollowUp()">No follow-up needed</div>
+              <div class="pill outcome" data-val="Yes" onclick="selectPill(this,'grpFollowUpPills','grpNoFollowUp');toggleGrpFollowUp()">Follow-up session planned</div>
+            </div>
+            <input type="hidden" id="grpNoFollowUp" value="No">
+          </div>
+        </div>
+        <div id="grpFollowUpDateBlock" style="display:none; margin-top:10px;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Next Session Date</label>
+              <input type="date" id="grpFollowUpDate">
+            </div>
+            <div class="form-group">
+              <label>Mode</label>
+              <select id="grpFollowUpMode">
+                <option>F2F at HealthServe</option>
+                <option>F2F at Dormitory</option>
+                <option>F2F at Hospital</option>
+                <option>Online — Zoom</option>
+                <option>WhatsApp Video</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POST-SESSION banner -->
+    <div style="background:#1B4D3E; color:white; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px;">
+      <strong>📊 POST-SESSION — ask these at the END of the session before participants leave</strong>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="background:#1B4D3E; color:white;">POST-SESSION — Participant Feedback (record group counts)</div>
+      <div class="card-body">
+
+        <!-- How do you feel now -->
+        <div style="background:#F9F6F4; border-radius:6px; padding:12px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">How do you feel <em>now, after the session</em>?</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <div class="form-group"><label>😊 Better</label><input type="number" id="postFeelBetter" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>😐 Same</label><input type="number" id="postFeelSame" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>😟 Worse</label><input type="number" id="postFeelWorse" min="0" style="width:80px;" placeholder="0"></div>
+          </div>
+        </div>
+
+        <!-- What was helpful -->
+        <div style="background:#F9F6F4; border-radius:6px; padding:12px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">What parts of the session were <em>helpful</em>?</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <div class="form-group"><label>🗣️ Talking</label><input type="number" id="postHelpfulTalking" min="0" style="width:75px;" placeholder="0"></div>
+            <div class="form-group"><label>🎨 Drawing</label><input type="number" id="postHelpfulDrawing" min="0" style="width:75px;" placeholder="0"></div>
+            <div class="form-group"><label>✍️ Writing</label><input type="number" id="postHelpfulWriting" min="0" style="width:75px;" placeholder="0"></div>
+            <div class="form-group"><label>🧘 Relaxing</label><input type="number" id="postHelpfulRelaxing" min="0" style="width:75px;" placeholder="0"></div>
+            <div class="form-group"><label>None</label><input type="number" id="postHelpfulNone" min="0" style="width:75px;" placeholder="0"></div>
+          </div>
+        </div>
+
+        <!-- Peer support -->
+        <div style="background:#F9F6F4; border-radius:6px; padding:12px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Did you feel <em>supported by peers</em> in the group today?</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <div class="form-group"><label>👍 Yes</label><input type="number" id="postPeerYes" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>👐 Neutral</label><input type="number" id="postPeerNeutral" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>👎 No</label><input type="number" id="postPeerNo" min="0" style="width:80px;" placeholder="0"></div>
+          </div>
+        </div>
+
+        <!-- Session helpful overall -->
+        <div style="background:#F9F6F4; border-radius:6px; padding:12px; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Was this session <em>helpful overall</em>?</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <div class="form-group"><label>👍 Very helpful</label><input type="number" id="postHelpfulVery" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>🤚 Somewhat</label><input type="number" id="postHelpfulSomewhat" min="0" style="width:80px;" placeholder="0"></div>
+            <div class="form-group"><label>👎 Not helpful</label><input type="number" id="postHelpfulNot" min="0" style="width:80px;" placeholder="0"></div>
+          </div>
+        </div>
+
+        <!-- Recommend + Helpline -->
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <div style="background:#F9F6F4; border-radius:6px; padding:12px; flex:1; min-width:200px;">
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Would you <em>recommend</em> this session to a friend?</div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <div class="form-group"><label>👍 Yes</label><input type="number" id="postRecommendYes" min="0" style="width:80px;" placeholder="0"></div>
+              <div class="form-group"><label>👎 No</label><input type="number" id="postRecommendNo" min="0" style="width:80px;" placeholder="0"></div>
+            </div>
+          </div>
+          <div style="background:#F9F6F4; border-radius:6px; padding:12px; flex:1; min-width:200px;">
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Do you know about the <em>24-hr Helpline</em>?</div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <div class="form-group"><label>✅ Yes</label><input type="number" id="postHelplineYes" min="0" style="width:80px;" placeholder="0"></div>
+              <div class="form-group"><label>🤷 No</label><input type="number" id="postHelplineNo" min="0" style="width:80px;" placeholder="0"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comments -->
+        <div style="margin-top:12px;">
+          <label style="font-size:11px; font-weight:600; color:var(--crimson); text-transform:uppercase; letter-spacing:.4px;">Specific Comments / Feedback (max 3 — record as shared, add translation if needed)</label>
+          <div class="form-grid full" style="gap:8px; margin-top:8px;">
+            <input type="text" id="postComment1" placeholder="Comment 1">
+            <input type="text" id="postComment2" placeholder="Comment 2">
+            <input type="text" id="postComment3" placeholder="Comment 3 (optional)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group Closure Checklist -->
+    <div id="groupClosureSection" style="display:none;">
+      <div style="background:#F0F7F0; border:1px solid #B8D4B8; border-radius:8px; padding:14px 16px; margin-bottom:16px;">
+        <div style="font-size:13px; font-weight:700; color:#2D5A2D; margin-bottom:12px;">✅ Closure Checklist</div>
+        <div class="closure-check-item">
+          <span class="chk-icon" id="chk-grp-reason-icon">⬜</span>
+          <span class="chk-label">Closure reason selected</span>
+          <span class="chk-status" id="chk-grp-reason-status" style="color:#999; font-size:11px;">pending</span>
+        </div>
+        <div class="closure-check-item" id="chk-grp-cs">
+          <span class="chk-icon" id="chk-grp-cs-icon">⬜</span>
+          <span class="chk-label">Case Summary status</span>
+          <span class="chk-status" id="chk-grp-cs-status" style="color:#999; font-size:11px;">pending</span>
+        </div>
+        <div class="closure-check-item">
+          <span class="chk-icon">📊</span>
+          <div style="flex:1;">
+            <div class="chk-label">Group Evaluation — complete now</div>
+            <div style="font-size:11px; color:#666; margin-top:2px;">To be completed by the counsellor after every group session</div>
+            <a href="https://forms.office.com/r/tHaKLAHq15" target="_blank" class="btn btn-primary" style="font-size:12px; padding:5px 12px; text-decoration:none; margin-top:6px; display:inline-block;">Open Group Evaluation ↗</a>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Reason for Closure</label>
+        <select id="grpClosureReason" onchange="updateGroupClosureChecklist()">
+          <option value="">— Select reason —</option>
+          <option>Resolved / Goals met</option>
+          <option>Single session — no follow-up needed</option>
+          <option>Unresponsive — no contact after 3 attempts</option>
+          <option>Referred out</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+
+  </div><!-- /groupClinical -->
+
   <div class="btn-row">
     <button class="btn btn-secondary" onclick="goToScreen(1)">← Back</button>
     <button class="btn btn-primary" onclick="validateScreen2()">Next: Case Summary →</button>
@@ -1455,6 +1826,42 @@
               <input type="checkbox" id="cs_case_closed" onchange="toggleCsClosed()" style="width:16px; height:16px; cursor:pointer;">
               <span>Case closed — no follow-up needed</span>
             </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUP CS SECTION -->
+  <div id="groupCsSection" style="display:none;">
+    <div class="card">
+      <div class="card-header gold">Group Case Summary — for referrer</div>
+      <div class="card-body">
+        <div class="cs-note">Write in plain language. Aim for 2–4 sentences per field. Follow-up auto-fills from session notes.</div>
+        <div class="form-grid full" style="gap:14px;">
+          <div class="form-group">
+            <label>Background</label>
+            <textarea id="grpCsBackground" rows="3" placeholder="Why was this group session requested? What event or situation prompted it?"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Group Dynamics</label>
+            <textarea id="grpCsDynamics" rows="3" placeholder="Emotional tone, engagement level, how the group responded to the session…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Key Observations &amp; Discussions</label>
+            <textarea id="grpCsObservations" rows="3" placeholder="Key themes that emerged, what was discussed, notable observations…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Action Plan &amp; Recommendations</label>
+            <textarea id="grpCsActionPlan" rows="3" placeholder="Recommendations for the group, follow-up plan, any referrals made…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Individual Findings (if any)</label>
+            <textarea id="grpCsIndividualFindings" rows="3" placeholder="For specific members needing further attention. Use initials only, not full names."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Follow-up / Next Contact</label>
+            <input type="text" id="grpCsNextContact" placeholder="e.g. No follow-up required / 27 Jun 2026 — F2F at Dormitory">
           </div>
         </div>
       </div>
@@ -1900,9 +2307,17 @@ function onClientSelect() {
 // ── Toggle intake section ─────────────────────────────────────────────────────
 function toggleIntake() {
   const stage = document.getElementById('sessionStage').value;
-  document.getElementById('intakeSection').classList.toggle('visible', stage === 'Intake');
-  document.getElementById('closureSection').classList.toggle('visible', stage === 'Closure');
-  if (stage === 'Closure') updateClosureChecklist();
+  const type = document.getElementById('sessionType').value;
+  const isGroup = type === 'Group';
+
+  // Individual sections
+  document.getElementById('intakeSection').classList.toggle('visible', stage === 'Intake' && !isGroup);
+  document.getElementById('closureSection').classList.toggle('visible', stage === 'Closure' && !isGroup);
+
+  // Group closure section
+  updateGroupClosureVisibility();
+
+  if (stage === 'Closure' && !isGroup) updateClosureChecklist();
 }
 
 // ── SUD update ────────────────────────────────────────────────────────────────
@@ -2094,6 +2509,92 @@ function updateClosureChecklist() {
   }
 }
 
+// ── Group session toggle ───────────────────────────────────────────────────────
+function toggleSessionType() {
+  const type = document.getElementById('sessionType').value;
+  const isGroup = type === 'Group';
+  document.getElementById('individualClinical').style.display = isGroup ? 'none' : 'block';
+  document.getElementById('groupClinical').style.display = isGroup ? 'block' : 'none';
+
+  // Screen 3: show individual or group CS
+  const csSection = document.getElementById('cs-unified');
+  const grpCsSection = document.getElementById('groupCsSection');
+  if (csSection) csSection.style.display = isGroup ? 'none' : 'block';
+  if (grpCsSection) grpCsSection.style.display = isGroup ? 'block' : 'none';
+
+  // Group closure section visibility
+  updateGroupClosureVisibility();
+}
+
+function updateGroupClosureVisibility() {
+  const stage = document.getElementById('sessionStage').value;
+  const grpClosure = document.getElementById('groupClosureSection');
+  if (grpClosure) grpClosure.style.display = stage === 'Closure' ? 'block' : 'none';
+  if (stage === 'Closure') updateGroupClosureChecklist();
+}
+
+function updateGroupClosureChecklist() {
+  const reason = document.getElementById('grpClosureReason')?.value || '';
+  const reasonOk = reason !== '';
+  const iconEl = document.getElementById('chk-grp-reason-icon');
+  const statusEl = document.getElementById('chk-grp-reason-status');
+  if (iconEl) iconEl.textContent = reasonOk ? '✅' : '⬜';
+  if (statusEl) { statusEl.textContent = reasonOk ? reason : 'pending'; statusEl.style.color = reasonOk ? '#2D7A4F' : '#999'; }
+}
+
+function toggleCwReferral() {
+  const val = document.getElementById('groupCwReferral').value;
+  document.getElementById('cwReferralDetails').style.display = val === 'Yes' ? 'block' : 'none';
+}
+
+function toggleGrpFollowUp() {
+  const val = document.getElementById('grpNoFollowUp').value;
+  document.getElementById('grpFollowUpDateBlock').style.display = val === 'Yes' ? 'block' : 'none';
+}
+
+// ── Individual Findings (group) ───────────────────────────────────────────────
+let findingCount = 0;
+function addIndividualFinding() {
+  findingCount++;
+  const id = `finding_${findingCount}`;
+  const container = document.getElementById('individualFindingsContainer');
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = 'background:#F9F6F4;border:1px solid #E0D8D4;border-radius:8px;padding:12px;margin-bottom:10px;';
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:12px;font-weight:700;color:var(--crimson);">Member ${findingCount}</div>
+      <button type="button" onclick="document.getElementById('${id}').remove()" style="background:none;border:none;cursor:pointer;color:#999;font-size:16px;">✕</button>
+    </div>
+    <div class="form-grid" style="gap:10px;">
+      <div class="form-group"><label>Member Name / Initials</label><input type="text" id="${id}_name" placeholder="Name or initials"></div>
+      <div class="form-group"><label>Risk Level</label>
+        <select id="${id}_risk"><option>Low</option><option>Medium</option><option>High</option><option>N/A</option></select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:8px;"><label>Key Findings &amp; Observations</label>
+      <textarea id="${id}_findings" rows="2" placeholder="What was observed for this member? Any specific themes or concerns?"></textarea>
+    </div>
+    <div class="form-group" style="margin-top:8px;"><label>Plan / Follow-up for this member</label>
+      <textarea id="${id}_plan" rows="2" placeholder="Individual plan, referral, or follow-up needed…"></textarea>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function collectIndividualFindings() {
+  const findings = [];
+  document.querySelectorAll('[id^="finding_"]').forEach(el => {
+    const id = el.id;
+    const name = document.getElementById(id + '_name')?.value || '';
+    const risk = document.getElementById(id + '_risk')?.value || '';
+    const f = document.getElementById(id + '_findings')?.value || '';
+    const plan = document.getElementById(id + '_plan')?.value || '';
+    if (name || f) findings.push({ name, risk, findings: f, plan });
+  });
+  return findings;
+}
+
 // ── CS toggle ────────────────────────────────────────────────────────────────────────────────────
 function toggleCS() {
   const val = document.getElementById('csRequired').value;
@@ -2234,10 +2735,10 @@ function generateOutput() {
   const consent = document.getElementById('consentObtained').value;
   const sudStart = document.getElementById('sudStart').value;
   const sudEnd = document.getElementById('sudEnd').value;
-  const soapS = document.getElementById('soapS').value;
-  const soapO = document.getElementById('soapO').value;
-  const soapA = document.getElementById('soapA').value;
-  const soapP = document.getElementById('soapP').value;
+  const soapS = isGroupSession ? document.getElementById('groupSoapS').value : document.getElementById('soapS').value;
+  const soapO = isGroupSession ? document.getElementById('groupSoapO').value : document.getElementById('soapO').value;
+  const soapA = isGroupSession ? document.getElementById('groupSoapA').value : document.getElementById('soapA').value;
+  const soapP = isGroupSession ? document.getElementById('groupSoapP').value : document.getElementById('soapP').value;
   const risk = document.getElementById('riskLevel').value;
   const outcome = document.getElementById('sessionOutcome').value;
   const fuDate = document.getElementById('followUpDate').value;
@@ -2260,13 +2761,118 @@ function generateOutput() {
   cr += 'CLIENT & SESSION DETAILS\n';
   cr += '─────────────────────────────────────────────────────────\n';
   const isGroupSession = document.getElementById('sessionType').value === 'Group';
+
   if (isGroupSession) {
+    // ── GROUP CR OUTPUT ────────────────────────────────────────────
+    cr += `GROUP COUNSELLING REPORT\n${'═'.repeat(55)}\n`;
     cr += `Group Case ID : ${c.case_id}\n`;
-    cr += `Group Members :\n${c.name}\n`;
+    cr += `Group Members :\n${c.name || '(see group register)'}\n\n`;
+    cr += `Counsellor    : ${counsellor}\n`;
+    cr += `Session No.   : ${sessNo}\n`;
+    cr += `Date          : ${dateFormatted}  ${sessTime ? '@ ' + sessTime : ''}\n`;
+    cr += `Mode          : ${mode}\n`;
+    cr += `Duration      : ${duration ? duration + ' min' : '—'}\n`;
+    cr += `Consent       : ${consent}\n`;
+    cr += `Topic         : ${document.getElementById('groupTopic').value || '—'}\n`;
+    const pax = document.getElementById('groupParticipants').value;
+    if (pax) cr += `Participants  : ${pax}\n`;
+    const langMode = document.getElementById('groupLanguageMode').value;
+    if (langMode) cr += `Language Mode : ${langMode}\n`;
+    const cause = document.getElementById('groupCauseOfDeath').value;
+    if (cause) cr += `Cause of Death: ${cause}\n`;
+    cr += '\n';
+
+    // Age distribution
+    const a1 = document.getElementById('grpAgeUnder30').value;
+    const a2 = document.getElementById('grpAge30to50').value;
+    const a3 = document.getElementById('grpAgeOver50').value;
+    if (a1 || a2 || a3) {
+      cr += `AGE DISTRIBUTION\n${'─'.repeat(55)}\n`;
+      cr += `Under 30: ${a1||0}  |  30–50: ${a2||0}  |  Over 50: ${a3||0}\n\n`;
+    }
+
+    // Pre-session
+    cr += `PRE-SESSION ASSESSMENT\n${'─'.repeat(55)}\n`;
+    cr += `Appetite (less/no): Yes ${document.getElementById('preAppetiteYes').value||0} / No ${document.getElementById('preAppetiteNo').value||0}\n`;
+    cr += `Sleep: ≤5hrs ${document.getElementById('preSleepUnder5').value||0} / 6–7hrs ${document.getElementById('preSleep6to7').value||0} / 7+hrs ${document.getElementById('preSleepOver7').value||0}\n`;
+    cr += `Affected by incident: Yes ${document.getElementById('preAffectedYes').value||0} / No ${document.getElementById('preAffectedNo').value||0}\n`;
+    cr += `Mood before: 😀 ${document.getElementById('preMoodHappy').value||0}  😐 ${document.getElementById('preMoodCalm').value||0}  😟 ${document.getElementById('preMoodSad').value||0}  😕 ${document.getElementById('preMoodWorried').value||0}\n\n`;
+
+    // Group observation
+    const grpObs = document.getElementById('groupObservation').value;
+    if (grpObs) {
+      cr += `GROUP OBSERVATION\n${'─'.repeat(55)}\n${grpObs}\n\n`;
+    }
+
+    // Group SOAP
+    cr += `CASE FORMULATION — GROUP\n${'─'.repeat(55)}\n`;
+    cr += `S (Group Subjective)\n${document.getElementById('groupSoapS').value || '—'}\n\n`;
+    cr += `O (Group Objective)\n${document.getElementById('groupSoapO').value || '—'}\n\n`;
+    cr += `A (Assessment)\nStage of Change: ${document.getElementById('groupStageOfChange').value || '—'}  |  Risk: ${document.getElementById('groupRisk').value || '—'}\n${document.getElementById('groupSoapA').value || '—'}\n\n`;
+    cr += `P (Plan)\n${document.getElementById('groupSoapP').value || '—'}\n\n`;
+
+    // Individual findings
+    const findings = collectIndividualFindings();
+    if (findings.length > 0) {
+      cr += `INDIVIDUAL FINDINGS\n${'─'.repeat(55)}\n`;
+      findings.forEach((f, i) => {
+        cr += `${i+1}. ${f.name || 'Member'} (Risk: ${f.risk})\n`;
+        if (f.findings) cr += `   Findings: ${f.findings}\n`;
+        if (f.plan) cr += `   Plan: ${f.plan}\n`;
+      });
+      cr += '\n';
+    }
+
+    // CW referral
+    const cwRef = document.getElementById('groupCwReferral').value;
+    if (cwRef === 'Yes') {
+      cr += `CASEWORK REFERRAL\n${'─'.repeat(55)}\n`;
+      cr += `Referral to casework@healthserve.org.sg has been triggered.\n`;
+      cr += `Details: ${document.getElementById('cwReferralText').value || '—'}\n\n`;
+    }
+
+    // Group outcome
+    const grpOutcome = document.getElementById('grpOutcome').value;
+    const grpNoFU = document.getElementById('grpNoFollowUp').value;
+    cr += `OUTCOME & FOLLOW-UP\n${'─'.repeat(55)}\n`;
+    cr += `Outcome    : ${grpOutcome}\n`;
+    if (grpNoFU === 'Yes') {
+      const fuDate = document.getElementById('grpFollowUpDate').value;
+      const fuMode = document.getElementById('grpFollowUpMode').value;
+      cr += `Follow-up  : ${fuDate ? new Date(fuDate).toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'}) : '—'}  ${fuMode}\n`;
+    } else {
+      cr += `Follow-up  : No follow-up needed\n`;
+    }
+    cr += '\n';
+
+    // Post-session
+    cr += `POST-SESSION ASSESSMENT\n${'─'.repeat(55)}\n`;
+    cr += `Feel after session: 😊 Better ${document.getElementById('postFeelBetter').value||0} / 😐 Same ${document.getElementById('postFeelSame').value||0} / 😟 Worse ${document.getElementById('postFeelWorse').value||0}\n`;
+    cr += `What helped: Talking ${document.getElementById('postHelpfulTalking').value||0} / Drawing ${document.getElementById('postHelpfulDrawing').value||0} / Writing ${document.getElementById('postHelpfulWriting').value||0} / Relaxing ${document.getElementById('postHelpfulRelaxing').value||0} / None ${document.getElementById('postHelpfulNone').value||0}\n`;
+    cr += `Peer support: 👍 ${document.getElementById('postPeerYes').value||0} / 👐 ${document.getElementById('postPeerNeutral').value||0} / 👎 ${document.getElementById('postPeerNo').value||0}\n`;
+    cr += `Session helpful: Very ${document.getElementById('postHelpfulVery').value||0} / Somewhat ${document.getElementById('postHelpfulSomewhat').value||0} / Not ${document.getElementById('postHelpfulNot').value||0}\n`;
+    cr += `Would recommend: Yes ${document.getElementById('postRecommendYes').value||0} / No ${document.getElementById('postRecommendNo').value||0}\n`;
+    cr += `Knows helpline: Yes ${document.getElementById('postHelplineYes').value||0} / No ${document.getElementById('postHelplineNo').value||0}\n`;
+    const c1 = document.getElementById('postComment1').value;
+    const c2 = document.getElementById('postComment2').value;
+    const c3 = document.getElementById('postComment3').value;
+    if (c1 || c2 || c3) {
+      cr += `\nComments:\n`;
+      if (c1) cr += `1. ${c1}\n`;
+      if (c2) cr += `2. ${c2}\n`;
+      if (c3) cr += `3. ${c3}\n`;
+    }
+
+    // Group closure
+    if (stage === 'Closure') {
+      const grpClReason = document.getElementById('grpClosureReason')?.value;
+      cr += `\nCLOSURE\n${'─'.repeat(55)}\n`;
+      cr += `Reason: ${grpClReason || '—'}\n`;
+    }
+
   } else {
+    // ── INDIVIDUAL CR OUTPUT ───────────────────────────────────────
     cr += `Client Name   : ${c.name}\n`;
-  }
-  cr += `Case ID       : ${c.case_id}\n`;
   cr += `Counsellor    : ${counsellor}\n`;
   cr += `Session No.   : ${sessNo}  (${stage})\n`;
   cr += `Date          : ${dateFormatted}  ${sessTime ? '@ ' + sessTime : ''}\n`;
@@ -2379,18 +2985,47 @@ function generateOutput() {
     if (phq4closureText) cr += phq4closureText + '\n';
     cr += `Feedback Form : ${fb}\n`;
   }
-  
+
+  } // end individual else block
+
   cr += '\n═══════════════════════════════════════════════════════════\n';
   cr += `Recorded by: ${counsellor}  |  Generated: ${new Date().toLocaleString('en-SG')}\n`;
   cr += 'HealthServe Psychotherapy & Counselling Team — CONFIDENTIAL\n';
-  
+
   document.getElementById('crOutput').textContent = cr;
-  
+
   // ── CS Extract ────────────────────────────────────────────────────────────
   const csType = document.getElementById('csRequired').value;
   let cs = '';
-  
-  if (csType === 'Yes') {
+
+  if (isGroupSession) {
+    // Group CS
+    const grpBg     = document.getElementById('grpCsBackground')?.value;
+    const grpDyn    = document.getElementById('grpCsDynamics')?.value;
+    const grpObs2   = document.getElementById('grpCsObservations')?.value;
+    const grpAct    = document.getElementById('grpCsActionPlan')?.value;
+    const grpIndF   = document.getElementById('grpCsIndividualFindings')?.value;
+    const grpNext   = document.getElementById('grpCsNextContact')?.value;
+    if (grpBg || grpDyn || grpObs2 || grpAct) {
+      cs += '═══════════════════════════════════════════════════════════\n';
+      cs += 'HEALTHSERVE — GROUP CASE SUMMARY FOR REFERRER\n';
+      cs += '═══════════════════════════════════════════════════════════\n\n';
+      cs += `Group Case ID : ${c.case_id}\n`;
+      cs += `Counsellor    : ${counsellor}\n`;
+      cs += `Date          : ${dateFormatted}  |  Session ${sessNo}\n`;
+      const pax2 = document.getElementById('groupParticipants').value;
+      if (pax2) cs += `Participants  : ${pax2}\n`;
+      cs += `Topic         : ${document.getElementById('groupTopic').value || '—'}\n\n`;
+      if (grpBg)    cs += `BACKGROUND\n${grpBg}\n\n`;
+      if (grpDyn)   cs += `GROUP DYNAMICS\n${grpDyn}\n\n`;
+      if (grpObs2)  cs += `KEY OBSERVATIONS & DISCUSSIONS\n${grpObs2}\n\n`;
+      if (grpAct)   cs += `ACTION PLAN\n${grpAct}\n\n`;
+      if (grpIndF)  cs += `INDIVIDUAL FINDINGS\n${grpIndF}\n\n`;
+      cs += `FOLLOW-UP / NEXT CONTACT\n${grpNext || 'No follow-up required'}\n`;
+      cs += '\n═══════════════════════════════════════════════════════════\n';
+      cs += 'HealthServe Psychotherapy & Counselling Team — CONFIDENTIAL\n';
+    }
+  } else if (csType === 'Yes') {
     const csClosed = document.getElementById('cs_case_closed').checked;
     const csNextContact = csClosed ? 'Case closed — no follow-up' : (document.getElementById('cs_next_contact').value || fuFormatted);
     cs += '═══════════════════════════════════════════════════════════\n';
@@ -2501,9 +3136,65 @@ function generateOutput() {
     cs_plan:           document.getElementById('cs_plan') ? (document.getElementById('cs_plan').value || null) : null,
     cs_next_contact:   document.getElementById('cs_next_contact') ? (document.getElementById('cs_next_contact').value || null) : null,
     cs_case_closed:    document.getElementById('cs_case_closed') ? document.getElementById('cs_case_closed').checked : false,
-    closure_reason:    stage === 'Closure' ? (document.getElementById('closureReason').value || null) : null,
-    feedback_sent:     stage === 'Closure' ? (document.getElementById('feedbackSent').value || null) : null,
-    testimonial_status: stage === 'Closure' ? (document.getElementById('testimonialStatus') ? document.getElementById('testimonialStatus').value : null) : null,
+    closure_reason:    stage === 'Closure' ? (isGroupSession ? (document.getElementById('grpClosureReason')?.value || null) : (document.getElementById('closureReason').value || null)) : null,
+    feedback_sent:     stage === 'Closure' && !isGroupSession ? (document.getElementById('feedbackSent').value || null) : null,
+    testimonial_status: stage === 'Closure' && !isGroupSession ? (document.getElementById('testimonialStatus') ? document.getElementById('testimonialStatus').value : null) : null,
+
+    // Group-specific fields
+    group_topic:           isGroupSession ? (document.getElementById('groupTopic').value || null) : null,
+    group_participants:    isGroupSession ? (parseInt(document.getElementById('groupParticipants').value) || null) : null,
+    group_language_mode:   isGroupSession ? (document.getElementById('groupLanguageMode').value || null) : null,
+    group_cause_of_death:  isGroupSession ? (document.getElementById('groupCauseOfDeath').value || null) : null,
+    group_age_under30:     isGroupSession ? (parseInt(document.getElementById('grpAgeUnder30').value) || 0) : null,
+    group_age_30to50:      isGroupSession ? (parseInt(document.getElementById('grpAge30to50').value) || 0) : null,
+    group_age_over50:      isGroupSession ? (parseInt(document.getElementById('grpAgeOver50').value) || 0) : null,
+    group_observation:     isGroupSession ? (document.getElementById('groupObservation').value || null) : null,
+    group_soap_s:          isGroupSession ? (document.getElementById('groupSoapS').value || null) : null,
+    group_soap_o:          isGroupSession ? (document.getElementById('groupSoapO').value || null) : null,
+    group_soap_a:          isGroupSession ? (document.getElementById('groupSoapA').value || null) : null,
+    group_soap_p:          isGroupSession ? (document.getElementById('groupSoapP').value || null) : null,
+    group_risk:            isGroupSession ? (document.getElementById('groupRisk').value || null) : null,
+    group_stage_of_change: isGroupSession ? (document.getElementById('groupStageOfChange').value || null) : null,
+    group_individual_findings: isGroupSession ? JSON.stringify(collectIndividualFindings()) : null,
+    group_cw_referral:     isGroupSession ? (document.getElementById('groupCwReferral').value === 'Yes') : null,
+    group_cw_details:      isGroupSession ? (document.getElementById('cwReferralText')?.value || null) : null,
+    pre_appetite_yes:      isGroupSession ? (parseInt(document.getElementById('preAppetiteYes').value) || 0) : null,
+    pre_appetite_no:       isGroupSession ? (parseInt(document.getElementById('preAppetiteNo').value) || 0) : null,
+    pre_sleep_under5:      isGroupSession ? (parseInt(document.getElementById('preSleepUnder5').value) || 0) : null,
+    pre_sleep_6to7:        isGroupSession ? (parseInt(document.getElementById('preSleep6to7').value) || 0) : null,
+    pre_sleep_over7:       isGroupSession ? (parseInt(document.getElementById('preSleepOver7').value) || 0) : null,
+    pre_affected_yes:      isGroupSession ? (parseInt(document.getElementById('preAffectedYes').value) || 0) : null,
+    pre_affected_no:       isGroupSession ? (parseInt(document.getElementById('preAffectedNo').value) || 0) : null,
+    pre_mood_happy:        isGroupSession ? (parseInt(document.getElementById('preMoodHappy').value) || 0) : null,
+    pre_mood_calm:         isGroupSession ? (parseInt(document.getElementById('preMoodCalm').value) || 0) : null,
+    pre_mood_sad:          isGroupSession ? (parseInt(document.getElementById('preMoodSad').value) || 0) : null,
+    pre_mood_worried:      isGroupSession ? (parseInt(document.getElementById('preMoodWorried').value) || 0) : null,
+    post_feel_better:      isGroupSession ? (parseInt(document.getElementById('postFeelBetter').value) || 0) : null,
+    post_feel_same:        isGroupSession ? (parseInt(document.getElementById('postFeelSame').value) || 0) : null,
+    post_feel_worse:       isGroupSession ? (parseInt(document.getElementById('postFeelWorse').value) || 0) : null,
+    post_helpful_talking:  isGroupSession ? (parseInt(document.getElementById('postHelpfulTalking').value) || 0) : null,
+    post_helpful_drawing:  isGroupSession ? (parseInt(document.getElementById('postHelpfulDrawing').value) || 0) : null,
+    post_helpful_writing:  isGroupSession ? (parseInt(document.getElementById('postHelpfulWriting').value) || 0) : null,
+    post_helpful_relaxing: isGroupSession ? (parseInt(document.getElementById('postHelpfulRelaxing').value) || 0) : null,
+    post_helpful_none:     isGroupSession ? (parseInt(document.getElementById('postHelpfulNone').value) || 0) : null,
+    post_peer_yes:         isGroupSession ? (parseInt(document.getElementById('postPeerYes').value) || 0) : null,
+    post_peer_neutral:     isGroupSession ? (parseInt(document.getElementById('postPeerNeutral').value) || 0) : null,
+    post_peer_no:          isGroupSession ? (parseInt(document.getElementById('postPeerNo').value) || 0) : null,
+    post_helpful_very:     isGroupSession ? (parseInt(document.getElementById('postHelpfulVery').value) || 0) : null,
+    post_helpful_somewhat: isGroupSession ? (parseInt(document.getElementById('postHelpfulSomewhat').value) || 0) : null,
+    post_helpful_not:      isGroupSession ? (parseInt(document.getElementById('postHelpfulNot').value) || 0) : null,
+    post_recommend_yes:    isGroupSession ? (parseInt(document.getElementById('postRecommendYes').value) || 0) : null,
+    post_recommend_no:     isGroupSession ? (parseInt(document.getElementById('postRecommendNo').value) || 0) : null,
+    post_helpline_yes:     isGroupSession ? (parseInt(document.getElementById('postHelplineYes').value) || 0) : null,
+    post_helpline_no:      isGroupSession ? (parseInt(document.getElementById('postHelplineNo').value) || 0) : null,
+    post_comment1:         isGroupSession ? (document.getElementById('postComment1').value || null) : null,
+    post_comment2:         isGroupSession ? (document.getElementById('postComment2').value || null) : null,
+    post_comment3:         isGroupSession ? (document.getElementById('postComment3').value || null) : null,
+    group_cs_background:   isGroupSession ? (document.getElementById('grpCsBackground')?.value || null) : null,
+    group_cs_dynamics:     isGroupSession ? (document.getElementById('grpCsDynamics')?.value || null) : null,
+    group_cs_observations: isGroupSession ? (document.getElementById('grpCsObservations')?.value || null) : null,
+    group_cs_action_plan:  isGroupSession ? (document.getElementById('grpCsActionPlan')?.value || null) : null,
+    group_cs_individual_findings: isGroupSession ? (document.getElementById('grpCsIndividualFindings')?.value || null) : null,
   };
 
   db.from('sessions').insert(supabaseRecord).then(({ error: dbErr }) => {
@@ -2719,6 +3410,20 @@ function sendEmail() {
   
   const mailto = `mailto:mentalhealth@healthserve.org.sg?cc=durga@healthserve.org.sg&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailto;
+
+  // CW referral second email — fires if group session with CW referral = Yes
+  const isGroup = document.getElementById('sessionType').value === 'Group';
+  const cwReferral = document.getElementById('groupCwReferral')?.value;
+  if (isGroup && cwReferral === 'Yes') {
+    const cwText = document.getElementById('cwReferralText')?.value || '(No details provided)';
+    const c = currentClient;
+    const cwSubject = `CASEWORK REFERRAL — ${c ? c.case_id : ''} — ${document.getElementById('sessionDate').value}`;
+    const cwBody = `CASEWORK SUPPORT REFERRAL\n${'─'.repeat(50)}\nGroup Case ID : ${c ? c.case_id : '—'}\nDate          : ${document.getElementById('sessionDate').value}\nCounsellor    : ${document.getElementById('counsellorSelect').value}\nSession No.   : ${document.getElementById('sessionNo').value}\n\nMEMBERS REQUIRING CASEWORK SUPPORT:\n${'─'.repeat(50)}\n${cwText}\n\nPlease follow up with the above member(s) as appropriate.\n\nThis referral was generated from the PCT Session Log.`;
+    setTimeout(() => {
+      const cwMailto = `mailto:casework@healthserve.org.sg?cc=mentalhealth@healthserve.org.sg&subject=${encodeURIComponent(cwSubject)}&body=${encodeURIComponent(cwBody)}`;
+      window.open(cwMailto);
+    }, 1500);
+  }
 }
 
 // ── Print ─────────────────────────────────────────────────────────────────────
