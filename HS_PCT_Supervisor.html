@@ -121,10 +121,10 @@ input:focus,select:focus{outline:none;border-color:var(--crimson);}
     <div class="form-row" style="margin-bottom:16px;">
       <div class="form-group"><label>Period</label>
         <select id="outcomePeriod" onchange="loadOutcomes()">
-          <option value="month">This Month</option>
+          <option value="all" selected>All Cases (2025–2026)</option>
+          <option value="year">This Year (2026)</option>
           <option value="quarter">This Quarter</option>
-          <option value="year" selected>This Year (2026)</option>
-          <option value="all">All Time</option>
+          <option value="month">This Month</option>
         </select>
       </div>
       <div class="form-group"><label>Counsellor</label>
@@ -406,69 +406,89 @@ input:focus,select:focus{outline:none;border-color:var(--crimson);}
 
   <!-- MANAGEMENT REPORT -->
   <div id="tab-mgmt" class="tab-panel" style="display:none;">
-    <div class="form-row" style="margin-bottom:16px;">
-      <div class="form-group"><label>Report Month</label>
-        <select id="mgmtMonth" onchange="loadMgmtReport()">
-          <option value="1">January 2026</option><option value="2">February 2026</option>
-          <option value="3">March 2026</option><option value="4">April 2026</option>
-          <option value="5">May 2026</option><option value="6" selected>June 2026</option>
-          <option value="7">July 2026</option><option value="8">August 2026</option>
-          <option value="9">September 2026</option><option value="10">October 2026</option>
-          <option value="11">November 2026</option><option value="12">December 2026</option>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--text-gray);">
+        Live data from Supabase · Baseline: 100 clients, 406 sessions (migrated 22 Jun 2026)
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="mgmtMonth" onchange="loadMgmtReport()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;">
+          <option value="1">Jan 2026</option><option value="2">Feb 2026</option>
+          <option value="3">Mar 2026</option><option value="4">Apr 2026</option>
+          <option value="5">May 2026</option><option value="6" selected>Jun 2026</option>
+          <option value="7">Jul 2026</option><option value="8">Aug 2026</option>
+          <option value="9">Sep 2026</option><option value="10">Oct 2026</option>
+          <option value="11">Nov 2026</option><option value="12">Dec 2026</option>
         </select>
-      </div>
-      <div class="form-group" style="justify-content:flex-end;">
-        <label>&nbsp;</label>
-        <button class="btn btn-green" onclick="exportMgmtReport()">⬇ Export Month as CSV</button>
+        <button class="btn btn-green" onclick="exportMgmtReport()" style="font-size:12px;padding:5px 12px;">⬇ Export CSV</button>
       </div>
     </div>
 
-    <div class="alert alert-info" style="margin-bottom:16px;">This mirrors the HealthServe monthly report format. Export to fill the management dashboard spreadsheet.</div>
+    <!-- KPI row -->
+    <div class="stats-grid" id="mgmtKPIs" style="margin-bottom:16px;">
+      <div class="stat-card"><div class="stat-num" id="mk-active">—</div><div class="stat-label">Active Caseload</div><div class="stat-sub">all active cases</div></div>
+      <div class="stat-card"><div class="stat-num" id="mk-new">—</div><div class="stat-label">New Intakes</div><div class="stat-sub">opened this month</div></div>
+      <div class="stat-card highlight"><div class="stat-num" id="mk-sess">—</div><div class="stat-label">Sessions This Month</div></div>
+      <div class="stat-card"><div class="stat-num" id="mk-closed">—</div><div class="stat-label">Cases Closed</div><div class="stat-sub">this month</div></div>
+      <div class="stat-card"><div class="stat-num" id="mk-ytd-sess">—</div><div class="stat-label">Sessions YTD 2026</div></div>
+      <div class="stat-card"><div class="stat-num" id="mk-ytd-new">—</div><div class="stat-label">New Cases YTD 2026</div></div>
+    </div>
 
-    <!-- Volume -->
-    <div class="card">
-      <div class="card-header">Service Volume</div>
-      <div class="card-body">
-        <table class="data-table" id="mgmtVolume">
-          <thead><tr><th>Metric</th><th>This Month</th><th>YTD</th></tr></thead>
-          <tbody id="mgmtVolumeBody"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
-        </table>
+    <!-- Charts row -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:16px;">
+      <div class="card">
+        <div class="card-header">Sessions per Month — 2026</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartMgmtMonthly"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Active Caseload Risk Profile</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartMgmtRisk"></canvas></div></div>
       </div>
     </div>
 
-    <!-- Individual cases -->
-    <div class="card">
-      <div class="card-header">Individual Counselling Cases</div>
-      <div class="card-body">
-        <table class="data-table">
-          <thead><tr><th>Category</th><th>Breakdown</th><th>This Month</th><th>YTD</th></tr></thead>
-          <tbody id="mgmtIndBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
-        </table>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;">
+      <div class="card">
+        <div class="card-header gold">Language</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartMgmtLang"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header gold">Referral Source</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartMgmtRef"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header gold">Primary Issue</div>
+        <div class="card-body"><div class="chart-container"><canvas id="chartMgmtIssue"></canvas></div></div>
       </div>
     </div>
 
-    <!-- Group sessions -->
-    <div class="card">
-      <div class="card-header" style="background:#1B4D3E;">Group Counselling Sessions</div>
-      <div class="card-body">
-        <table class="data-table">
-          <thead><tr><th>Category</th><th>Breakdown</th><th>This Month</th><th>YTD</th></tr></thead>
-          <tbody id="mgmtGrpBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
-        </table>
+    <!-- Detailed tables -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+      <div class="card">
+        <div class="card-header">Individual Cases — This Month</div>
+        <div class="card-body">
+          <table class="data-table"><thead><tr><th>Category</th><th>This Month</th><th>YTD</th></tr></thead>
+          <tbody id="mgmtIndBody"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="background:#1B4D3E;">Group Sessions</div>
+        <div class="card-body">
+          <table class="data-table"><thead><tr><th>Category</th><th>This Month</th><th>YTD</th></tr></thead>
+          <tbody id="mgmtGrpBody"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody></table>
+        </div>
       </div>
     </div>
 
     <!-- Outcomes -->
     <div class="card">
-      <div class="card-header gold">Counselling Outcomes (for management & board)</div>
+      <div class="card-header gold">Counselling Outcomes</div>
       <div class="card-body">
-        <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;">PHQ-4 is used as a distress screener, not a diagnostic tool. A ≥3 point improvement is the established threshold for clinically meaningful change (Löwe et al., 2010). SUD measures immediate in-session distress relief.</div>
-        <table class="data-table">
-          <thead><tr><th>Outcome Category</th><th>Measure</th><th>This Month</th><th>YTD</th></tr></thead>
-          <tbody id="mgmtOutcomesBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
-        </table>
+        <div style="font-size:11px;color:var(--text-gray);margin-bottom:10px;">PHQ-4 used as distress screener. ≥3 point improvement = clinically meaningful change (Löwe et al., 2010). SUD = in-session distress relief. Legacy sessions (pre-Jun 2026) have no SUD/PHQ-4 data.</div>
+        <table class="data-table"><thead><tr><th>Category</th><th>Measure</th><th>This Month</th><th>YTD</th></tr></thead>
+        <tbody id="mgmtOutcomesBody"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody></table>
       </div>
     </div>
+
   </div>
     <div class="alert alert-info">Tamper-proof log of every session record insert and update. Cannot be altered by any user.</div>
     <div class="card">
@@ -576,7 +596,8 @@ function getDateFilter() {
     return new Date(now.getFullYear(), q * 3, 1).toISOString().split('T')[0];
   }
   if (period === 'year') return `${now.getFullYear()}-01-01`;
-  return null;
+  // 'all' — use service start date to include all migrated cases
+  return '2024-08-01';
 }
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
@@ -683,11 +704,8 @@ async function loadOutcomes() {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 
-  // ── Demographics & Referral charts ─────────────────────────────────────────
-  const fromDate2 = getDateFilter();
-  const periodClients = fromDate2
-    ? allClients.filter(c => c.created_at >= fromDate2 && c.case_type !== 'Group')
-    : allClients.filter(c => c.case_type !== 'Group');
+  // ── Demographics & Referral charts (always all clients — not period filtered) ─
+  const periodClients = allClients.filter(c => c.case_type !== 'Group');
 
   // Language
   const langMap = {};
@@ -1005,6 +1023,173 @@ window.onload = async function() {
     const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
     if (profile?.role === 'admin') {
       currentUser = session.user; currentProfile = profile;
+async function loadMgmtReport() {
+  const month = parseInt(document.getElementById('mgmtMonth').value);
+  const year = 2026;
+  const mStart = `${year}-${String(month).padStart(2,'0')}-01`;
+  const mEnd   = new Date(year, month, 0);
+  const mEndStr = `${year}-${String(month).padStart(2,'0')}-${String(mEnd.getDate()).padStart(2,'0')}`;
+  const yStart = `${year}-01-01`;
+  // Include all migrated data (from Aug 2024)
+  const allStart = '2024-08-01';
+
+  const [{ data: allSess }, { data: mSess }] = await Promise.all([
+    db.from('sessions').select('*').gte('session_date', allStart),
+    db.from('sessions').select('*').gte('session_date', mStart).lte('session_date', mEndStr)
+  ]);
+  const aS = allSess || [], mS = mSess || [];
+  const indA = aS.filter(s => s.session_type !== 'Group');
+  const indM = mS.filter(s => s.session_type !== 'Group');
+  const grpA = aS.filter(s => s.session_type === 'Group');
+  const grpM = mS.filter(s => s.session_type === 'Group');
+
+  // Active caseload = ALL active, not filtered by period
+  const activeAll = allClients.filter(c => c.status === 'Active' && c.case_type !== 'Group');
+  // New cases = opened this month/year
+  const newM = allClients.filter(c => c.case_type !== 'Group' && c.created_at >= mStart && c.created_at <= mEndStr);
+  const newYTD = allClients.filter(c => c.case_type !== 'Group' && c.created_at >= yStart);
+  // Closed this month
+  const closedM = allClients.filter(c => c.case_type !== 'Group' && c.status === 'Closed' && c.closed_at >= mStart && c.closed_at <= mEndStr);
+  const closedYTD = allClients.filter(c => c.case_type !== 'Group' && c.status === 'Closed' && c.closed_at >= yStart);
+  // YTD sessions
+  const ytdSess = aS.filter(s => s.session_date >= yStart && s.session_type !== 'Group');
+
+  // KPIs
+  document.getElementById('mk-active').textContent = activeAll.length;
+  document.getElementById('mk-new').textContent = newM.length;
+  document.getElementById('mk-sess').textContent = indM.length;
+  document.getElementById('mk-closed').textContent = closedM.length;
+  document.getElementById('mk-ytd-sess').textContent = ytdSess.length;
+  document.getElementById('mk-ytd-new').textContent = newYTD.length;
+
+  // Monthly sessions chart (2026)
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthly = new Array(12).fill(0);
+  aS.filter(s => s.session_type !== 'Group').forEach(s => {
+    if (s.session_date >= yStart) {
+      const m = parseInt(s.session_date.split('-')[1]) - 1;
+      monthly[m]++;
+    }
+  });
+  destroyChart('chartMgmtMonthly');
+  charts['chartMgmtMonthly'] = new Chart(document.getElementById('chartMgmtMonthly'), {
+    type: 'bar',
+    data: { labels: months, datasets: [{ data: monthly, backgroundColor: months.map((_,i) => i+1===month ? '#8C0303' : '#8C030355'), borderColor: '#8C0303', borderWidth: 1 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ ticks:{precision:0} } } }
+  });
+
+  // Risk chart
+  const riskOrder = ['HIGH','MED-HIGH','MEDIUM','LOW-MED','LOW'];
+  const riskCounts = {};
+  activeAll.forEach(c => { const r = c.risk_level || 'Not recorded'; riskCounts[r] = (riskCounts[r]||0)+1; });
+  destroyChart('chartMgmtRisk');
+  charts['chartMgmtRisk'] = new Chart(document.getElementById('chartMgmtRisk'), {
+    type: 'doughnut',
+    data: { labels: Object.keys(riskCounts), datasets: [{ data: Object.values(riskCounts), backgroundColor: ['#8C0303','#D32F2F','#FF9800','#FFCC00','#2D7A4F','#999'] }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ font:{ size:11 } } } } }
+  });
+
+  // Language chart
+  const langMap = {};
+  allClients.filter(c=>c.case_type!=='Group').forEach(c=>{ const l=c.language||'Unknown'; langMap[l]=(langMap[l]||0)+1; });
+  const langSorted = Object.entries(langMap).sort((a,b)=>b[1]-a[1]);
+  destroyChart('chartMgmtLang');
+  charts['chartMgmtLang'] = new Chart(document.getElementById('chartMgmtLang'), {
+    type:'bar', data:{ labels:langSorted.map(e=>e[0]), datasets:[{ data:langSorted.map(e=>e[1]), backgroundColor:['#8C0303','#FFCC00','#2D7A4F','#4A6741','#7B0000','#555'] }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, indexAxis:'y', scales:{x:{ticks:{precision:0}}} }
+  });
+
+  // Referral chart
+  const refMap = {};
+  allClients.filter(c=>c.case_type!=='Group').forEach(c=>{ const r=c.referral||'Unknown'; refMap[r]=(refMap[r]||0)+1; });
+  const refSorted = Object.entries(refMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart('chartMgmtRef');
+  charts['chartMgmtRef'] = new Chart(document.getElementById('chartMgmtRef'), {
+    type:'bar', data:{ labels:refSorted.map(e=>e[0]), datasets:[{ data:refSorted.map(e=>e[1]), backgroundColor:'#8C030366', borderColor:'#8C0303', borderWidth:1 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, indexAxis:'y', scales:{x:{ticks:{precision:0}}} }
+  });
+
+  // Issue chart
+  const issueMap = {};
+  allClients.filter(c=>c.case_type!=='Group').forEach(c=>{ const i=c.issue||'Not recorded'; issueMap[i]=(issueMap[i]||0)+1; });
+  const issueSorted = Object.entries(issueMap).sort((a,b)=>b[1]-a[1]);
+  destroyChart('chartMgmtIssue');
+  charts['chartMgmtIssue'] = new Chart(document.getElementById('chartMgmtIssue'), {
+    type:'bar', data:{ labels:issueSorted.map(e=>e[0]), datasets:[{ data:issueSorted.map(e=>e[1]), backgroundColor:['#8C0303','#FFCC00','#2D7A4F','#4A6741','#7B0000','#1B4D3E','#5A3E00','#555','#FF9800','#666','#C62828'].slice(0,issueSorted.length) }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, indexAxis:'y', scales:{x:{ticks:{precision:0}}} }
+  });
+
+  // Individual table
+  const riskLevels = ['HIGH','MED-HIGH','MEDIUM','LOW-MED','LOW'];
+  const languages = ['Bengali','Tamil','Burmese','Hindi','Others'];
+  const countByRef = (arr, field, val) => arr.filter(c=>(c[field]||'').includes(val)).length;
+  document.getElementById('mgmtIndBody').innerHTML = [
+    ['Active Caseload (total)', activeAll.length, activeAll.length],
+    ['New Intakes', newM.length, newYTD.length],
+    ['Cases Closed', closedM.length, closedYTD.length],
+    ['Sessions', indM.length, ytdSess.length],
+    ...riskLevels.map(r => [`Risk: ${r}`,
+      allClients.filter(c=>c.risk_level===r&&c.status==='Active'&&c.case_type!=='Group').length,
+      allClients.filter(c=>c.risk_level===r&&c.case_type!=='Group').length]),
+    ...languages.map(l => [`Language: ${l}`,
+      newM.filter(c=>(c.language||'').includes(l)).length,
+      newYTD.filter(c=>(c.language||'').includes(l)).length]),
+  ].map(([label, m, y], i) =>
+    `<tr${i<4?' style="font-weight:600;"':''}><td>${label}</td><td style="text-align:center;">${m}</td><td style="text-align:center;color:var(--text-gray);">${y}</td></tr>`
+  ).join('');
+
+  // Group table
+  const grpPaxM = grpM.reduce((a,s)=>a+(s.group_participants||0),0);
+  const grpPaxA = grpA.reduce((a,s)=>a+(s.group_participants||0),0);
+  document.getElementById('mgmtGrpBody').innerHTML = [
+    ['Sessions', grpM.length, grpA.length],
+    ['Total Participants', grpPaxM, grpPaxA],
+    ...languages.map(l=>[`Language: ${l}`,
+      grpM.filter(s=>(s.group_language_mode||'').toLowerCase().includes(l.toLowerCase())).length,
+      grpA.filter(s=>(s.group_language_mode||'').toLowerCase().includes(l.toLowerCase())).length])
+  ].map(([label,m,y]) =>
+    `<tr><td>${label}</td><td style="text-align:center;">${m}</td><td style="text-align:center;color:var(--text-gray);">${y}</td></tr>`
+  ).join('');
+
+  // Outcomes table
+  const sudM = indM.filter(s=>s.sud_start!==null&&s.sud_end!==null);
+  const sudA = indA.filter(s=>s.sud_start!==null&&s.sud_end!==null);
+  const avgSUD = arr => arr.length ? (arr.reduce((a,s)=>a+(s.sud_end-s.sud_start),0)/arr.length).toFixed(1) : '—';
+  const phqImproved = arr => {
+    const cm={}; arr.forEach(s=>{ if(!cm[s.case_id])cm[s.case_id]={i:null,c:null}; if(s.phq4_intake_total!==null&&s.phq4_intake_total!==undefined)cm[s.case_id].i=s.phq4_intake_total; if(s.phq4_closure_total!==null&&s.phq4_closure_total!==undefined)cm[s.case_id].c=s.phq4_closure_total; });
+    const pairs=Object.values(cm).filter(v=>v.i!==null&&v.c!==null);
+    return pairs.length ? `${Math.round(pairs.filter(v=>v.i-v.c>=3).length/pairs.length*100)}% (${pairs.filter(v=>v.i-v.c>=3).length}/${pairs.length})` : '—';
+  };
+  const highRisk = allClients.filter(c=>c.status==='Active'&&(c.risk_level==='HIGH'||c.risk_level==='MED-HIGH')&&c.case_type!=='Group');
+  const closedAll = allClients.filter(c=>c.status==='Closed'&&c.case_type!=='Group');
+  const resolvedM2 = closedM.filter(c=>{ const cs=aS.filter(s=>s.case_id===c.case_id&&s.closure_reason); return cs.some(s=>s.closure_reason?.includes('Resolved')||s.closure_reason?.includes('Goals met')); });
+  const resolvedAll = closedAll.filter(c=>{ const cs=aS.filter(s=>s.case_id===c.case_id&&s.closure_reason); return cs.some(s=>s.closure_reason?.includes('Resolved')||s.closure_reason?.includes('Goals met')); });
+  const grpBetterA = grpA.reduce((a,s)=>a+(s.post_feel_better||0),0);
+  const grpPostA = grpA.reduce((a,s)=>a+(s.post_feel_better||0)+(s.post_feel_same||0)+(s.post_feel_worse||0),0);
+  document.getElementById('mgmtOutcomesBody').innerHTML = [
+    ['🛡 Safety','HIGH/MED-HIGH active cases', highRisk.length, '—'],
+    ['🛡 Safety','Red flag sessions', mS.filter(s=>s.red_flag).length, aS.filter(s=>s.red_flag).length],
+    ['💚 Wellbeing','Avg SUD reduction per session', avgSUD(sudM), avgSUD(sudA)],
+    ['💚 Wellbeing','PHQ-4 clinical improvement (≥3pts)', phqImproved(indM), phqImproved(indA)],
+    ['💚 Wellbeing (Group)','Participants feeling better post-session', grpM.length?`${Math.round(grpM.reduce((a,s)=>a+(s.post_feel_better||0),0)/Math.max(1,grpM.reduce((a,s)=>a+(s.post_feel_better||0)+(s.post_feel_same||0)+(s.post_feel_worse||0),0))*100)}%`:'—', grpPostA?`${Math.round(grpBetterA/grpPostA*100)}%`:'—'],
+    ['📈 Engagement','Case completion rate (Resolved)', closedM.length?`${Math.round(resolvedM2.length/closedM.length*100)}%`:'—', closedAll.length?`${Math.round(resolvedAll.length/closedAll.length*100)}%`:'—'],
+    ['📈 Engagement','Avg sessions per completed case', '—', resolvedAll.length?(aS.filter(s=>resolvedAll.some(c=>c.case_id===s.case_id)).length/resolvedAll.length).toFixed(1):'—'],
+  ].map(([cat,measure,m,y])=>`<tr><td><span class="badge badge-gray" style="font-size:10px;">${cat}</span></td><td>${measure}</td><td style="text-align:center;font-weight:600;">${m}</td><td style="text-align:center;color:var(--text-gray);">${y}</td></tr>`).join('');
+}
+
+async function exportMgmtReport() {
+  const month = parseInt(document.getElementById('mgmtMonth').value);
+  const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const rows = [['HealthServe PCT — Management Report', `${monthNames[month]} 2026`]];
+  ['mgmtIndBody','mgmtGrpBody','mgmtOutcomesBody'].forEach(id => {
+    const el = document.getElementById(id);
+    el?.querySelectorAll('tr').forEach(tr => rows.push([...tr.querySelectorAll('td')].map(td => td.textContent.trim())));
+  });
+  const csv = rows.map(r => r.map(v => v.includes(',') ? `"${v}"` : v).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `HS_PCT_Report_${monthNames[month]}2026.csv`; a.click();
+}
+
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('userBadge').textContent = profile.full_name + ' (Supervisor)';
       await init();
