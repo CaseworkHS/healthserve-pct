@@ -767,13 +767,25 @@ async function loadOutcomes() {
 
   // Chart: Monthly sessions
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const currentMonth = new Date().getMonth(); // 0-indexed
   const monthly = new Array(12).fill(0);
-  sessions.forEach(s => { if (s.session_date) { const m = parseInt(s.session_date.split('-')[1]) - 1; monthly[m]++; } });
+  sessions.forEach(s => {
+    if (s.session_date) {
+      const d = new Date(s.session_date);
+      if (d.getFullYear() === 2026) {
+        const m = d.getMonth();
+        if (m <= currentMonth) monthly[m]++; // never count future months
+      }
+    }
+  });
+  // Only show months up to current
+  const visibleLabels = months.slice(0, currentMonth + 1);
+  const visibleData   = monthly.slice(0, currentMonth + 1);
   destroyChart('chartMonthly');
   charts['chartMonthly'] = new Chart(document.getElementById('chartMonthly'), {
     type: 'bar',
-    data: { labels: months, datasets: [{ label: 'Sessions', data: monthly, backgroundColor: '#8C030366', borderColor: '#8C0303', borderWidth: 1 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    data: { labels: visibleLabels, datasets: [{ label: 'Sessions', data: visibleData, backgroundColor: '#8C030366', borderColor: '#8C0303', borderWidth: 1 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { precision: 0 } } } }
   });
 
   // Demographics & Referral charts (always all clients not period filtered)
