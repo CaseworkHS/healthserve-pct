@@ -622,12 +622,42 @@ async function loadOutcomes() {
   const closureSessions = sessions.filter(s => s.session_stage === 'Closure').length;
   const feedbackRate = closureSessions ? Math.round((feedbackSent / closureSessions) * 100) + '%' : '—';
 
-  document.getElementById('os-sessions').textContent = totalSessions;
-  document.getElementById('os-cases').textContent = activeCases;
-  document.getElementById('os-sud').textContent = avgSUD > 0 ? '+' + avgSUD : avgSUD;
-  document.getElementById('os-closed').textContent = closed;
-  document.getElementById('os-flags').textContent = flags;
-  document.getElementById('os-feedback').textContent = feedbackRate;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+  set('os-sessions', totalSessions);
+  set('os-cases', activeCases);
+  set('os-flags', flags);
+  set('os-closed', closed);
+  set('os-feedback', feedbackRate);
+
+  // Three outcome category cards
+  const highRiskCases = allClients.filter(c => c.risk_level === 'HIGH' || c.risk_level === 'MED-HIGH');
+  set('oc-highrisk', highRiskCases.length);
+  const highRiskClosed = highRiskCases.filter(c => c.status === 'Closed');
+  const riskOrder = { LOW:0,'LOW-MED':1,MEDIUM:2,'MED-HIGH':3,HIGH:4 };
+  const deesc = highRiskClosed.filter(c => {
+    const last = sessions.filter(s => s.case_id === c.case_id && s.risk_level).sort((a,b) => b.session_date > a.session_date ? 1:-1)[0];
+    return last && (riskOrder[last.risk_level] < riskOrder[c.risk_level]);
+  });
+  set('oc-riskdeesc', highRiskClosed.length ? Math.round(deesc.length/highRiskClosed.length*100)+'%' : '—');
+  set('oc-sud', sudChanges.length ? (sudChanges.reduce((a,b)=>a+b,0)/sudChanges.length).toFixed(1) : '—');
+
+  // PHQ-4 clinical significance
+  const caseMap = {};
+  sessions.forEach(s => {
+    if (!caseMap[s.case_id]) caseMap[s.case_id] = { intake:null, closure:null };
+    if (s.phq4_intake_total != null) caseMap[s.case_id].intake = s.phq4_intake_total;
+    if (s.phq4_closure_total != null) caseMap[s.case_id].closure = s.phq4_closure_total;
+  });
+  const phqPairs = Object.values(caseMap).filter(c => c.intake != null && c.closure != null);
+  const phqImproved = phqPairs.filter(c => (c.intake - c.closure) >= 3).length;
+  set('oc-phqimproved', phqPairs.length ? Math.round(phqImproved/phqPairs.length*100)+'%' : '—');
+
+  const closedCases = allClients.filter(c => c.status === 'Closed');
+  const resolved = closedCases.filter(c => sessions.some(s => s.case_id === c.case_id && (s.closure_reason||'').includes('Resolved')));
+  set('oc-completion', closedCases.length ? Math.round(resolved.length/closedCases.length*100)+'%' : '—');
+  const sessPerResolved = resolved.map(c => sessions.filter(s => s.case_id === c.case_id).length).filter(n=>n>0);
+  set('oc-avgsessions', sessPerResolved.length ? (sessPerResolved.reduce((a,b)=>a+b,0)/sessPerResolved.length).toFixed(1) : '—');
 
   // Chart: SUD by counsellor
   const counsellors = [...new Set(sessions.map(s => s.counsellor_name))].filter(Boolean);
@@ -653,21 +683,21 @@ async function loadOutcomes() {
   });
 
   // Chart: PHQ-4 intake vs closure
-  const closedCases = allClients.filter(c => c.status === 'Closed' || sessions.some(s => s.case_id === c.case_id && s.session_stage === 'Closure'));
-  const phqPairs = [];
-  closedCases.forEach(c => {
+  const closedForPHQ = allClients.filter(c => c.status === 'Closed' || sessions.some(s => s.case_id === c.case_id && s.session_stage === 'Closure'));
+  const phqChartPairs = [];
+  closedForPHQ.forEach(c => {
     const intake = sessions.filter(s => s.case_id === c.case_id && s.phq4_intake_total !== null).sort((a,b) => a.session_date > b.session_date ? 1 : -1)[0];
     const closure = sessions.filter(s => s.case_id === c.case_id && s.phq4_closure_total !== null).sort((a,b) => a.session_date > b.session_date ? -1 : 1)[0];
-    if (intake && closure) phqPairs.push({ caseId: c.case_id, intake: intake.phq4_intake_total, closure: closure.phq4_closure_total });
+    if (intake && closure) phqChartPairs.push({ caseId: c.case_id, intake: intake.phq4_intake_total, closure: closure.phq4_closure_total });
   });
   destroyChart('chartPHQ');
   charts['chartPHQ'] = new Chart(document.getElementById('chartPHQ'), {
     type: 'bar',
     data: {
-      labels: phqPairs.map(p => p.caseId),
+      labels: phqChartPairs.map(p => p.caseId),
       datasets: [
-        { label: 'PHQ-4 Intake', data: phqPairs.map(p => p.intake), backgroundColor: '#8C030366' },
-        { label: 'PHQ-4 Closure', data: phqPairs.map(p => p.closure), backgroundColor: '#2D7A4F99' }
+        { label: 'PHQ-4 Intake', data: phqChartPairs.map(p => p.intake), backgroundColor: '#8C030366' },
+        { label: 'PHQ-4 Closure', data: phqChartPairs.map(p => p.closure), backgroundColor: '#2D7A4F99' }
       ]
     },
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 12, title: { display: true, text: 'PHQ-4 Score (0–12)' } } } }
