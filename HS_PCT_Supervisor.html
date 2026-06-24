@@ -538,26 +538,60 @@ let sessionPage = 0; const PAGE_SIZE = 50;
 let charts = {};
 
 // Auth
+let initRunning = false;
+
+async function startApp(user) {
+  if (initRunning) return;
+  initRunning = true;
+  try {
+    const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    if (!profile || profile.role !== 'admin') {
+      await db.auth.signOut();
+      document.getElementById('loginError').textContent = 'Supervisor access only.';
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('loginBtn').textContent = 'Sign In';
+      document.getElementById('loginBtn').disabled = false;
+      initRunning = false;
+      return;
+    }
+    currentUser = user; currentProfile = profile;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('userBadge').textContent = profile.full_name + ' (Supervisor)';
+    await init();
+  } catch(e) {
+    console.error('startApp error:', e);
+    document.getElementById('loginError').textContent = 'Error loading dashboard. Please refresh.';
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginBtn').textContent = 'Sign In';
+    document.getElementById('loginBtn').disabled = false;
+    initRunning = false;
+  }
+}
+
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
-  const pw = document.getElementById('loginPassword').value;
+  const pw    = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
-  const btn = document.getElementById('loginBtn');
-  errEl.style.display = 'none'; btn.textContent = 'Signing in…'; btn.disabled = true;
+  const btn   = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+  btn.textContent = 'Signing in…'; btn.disabled = true;
   const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
-  if (error) { errEl.textContent = 'Incorrect email or password.'; errEl.style.display = 'block'; btn.textContent = 'Sign In'; btn.disabled = false; return; }
-  const { data: profile } = await db.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
-  if (!profile || profile.role !== 'admin') {
-    await db.auth.signOut();
-    errEl.textContent = 'Supervisor access only. Contact Durga.';
-    errEl.style.display = 'block'; btn.textContent = 'Sign In'; btn.disabled = false; return;
+  if (error) {
+    errEl.textContent = 'Incorrect email or password.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Sign In'; btn.disabled = false;
+    return;
   }
-  currentUser = data.user; currentProfile = profile;
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('userBadge').textContent = profile.full_name + ' (Supervisor)';
-  await init();
+  await startApp(data.user);
 }
+
 async function doLogout() { await db.auth.signOut(); location.reload(); }
+
+// Page load: restore existing session silently
+window.addEventListener('load', async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) await startApp(session.user);
+});
 
 async function init() {
   const { data: profiles } = await db.from('profiles').select('id,full_name,role,staff_type');
@@ -1333,18 +1367,6 @@ async function exportMgmtReport() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download = `HS_PCT_Report_${monthNames[month]}2026.csv`; a.click();
 }
-// Auto-restore session on page reload─
-db.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session && !currentUser) {
-    const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-    if (profile && profile.role === 'admin') {
-      currentUser = session.user; currentProfile = profile;
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('userBadge').textContent = profile.full_name + ' (Supervisor)';
-      await init();
-    }
-  }
-});
 </script>
 </body>
 </html>
