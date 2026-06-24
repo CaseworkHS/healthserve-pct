@@ -583,8 +583,14 @@ function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + name).style.display = 'block';
   btn.classList.add('active');
-  if (name === 'group') loadGroupAnalytics();
-  if (name === 'mgmt') loadMgmtReport();
+  // Trigger data load when tab becomes visible
+  if (name === 'group')   loadGroupAnalytics();
+  if (name === 'mgmt')    loadMgmtReport();
+  if (name === 'sessions') loadSessions();
+  if (name === 'flags')    loadFlags();
+  if (name === 'followup') loadFollowUp();
+  if (name === 'accountability') loadAccountability();
+  if (name === 'audit')    loadAudit();
 }
 
 // Outcomes enhanced
