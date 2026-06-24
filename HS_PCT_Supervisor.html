@@ -537,7 +537,7 @@ let allProfiles = {}, allClients = [];
 let sessionPage = 0; const PAGE_SIZE = 50;
 let charts = {};
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// Auth
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const pw = document.getElementById('loginPassword').value;
@@ -577,16 +577,18 @@ async function init() {
   await loadMgmtReport();
 }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
+// Tabs
 function showTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + name).style.display = 'block';
   btn.classList.add('active');
+  if (name === 'group') loadGroupAnalytics();
+  if (name === 'mgmt') loadMgmtReport();
 }
 
-// ── Outcomes enhanced ────────────────────────────────────────────────────────
-// ── Outcomes (old version replaced above) ──────────────────────────────────────
+// Outcomes enhanced
+// Outcomes (old version replaced above)
 function getDateFilter() {
   const period = document.getElementById('outcomePeriod').value;
   const now = new Date();
@@ -734,7 +736,7 @@ async function loadOutcomes() {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
   });
 
-  // ── Demographics & Referral charts (always all clients — not period filtered) ─
+  // Demographics & Referral charts (always all clients not period filtered)
   const periodClients = allClients.filter(c => c.case_type !== 'Group');
 
   // Language
@@ -803,7 +805,7 @@ async function loadOutcomes() {
   }
 }
 
-// ── Sessions ──────────────────────────────────────────────────────────────────
+// Sessions
 async function loadSessions() { sessionPage = 0; await fetchSessions(); }
 async function fetchSessions() {
   const tbody = document.getElementById('sessionsBody');
@@ -872,7 +874,7 @@ function showDetail(r) {
   document.getElementById('detailCard').scrollIntoView({ behavior: 'smooth' });
 }
 
-// ── Red Flags ─────────────────────────────────────────────────────────────────
+// Red Flags
 async function loadFlags() {
   const { data } = await db.from('sessions').select('session_date,client_name,case_id,counsellor_name,risk_level,cpr_risk_judgement,flag_note,supervisor_notified_time,supervisor_notified_via,sp_safe_person,sp_counsellor_action').eq('red_flag', true).order('session_date', { ascending: false });
   const tbody = document.getElementById('flagsBody');
@@ -887,7 +889,7 @@ async function loadFlags() {
   </tr>`).join('');
 }
 
-// ── Follow-Up ─────────────────────────────────────────────────────────────────
+// Follow-Up
 async function loadFollowUp() {
   const today = new Date().toISOString().split('T')[0];
   const weekEnd = new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0];
@@ -938,7 +940,7 @@ async function loadFollowUp() {
     </tr>`).join('');
 }
 
-// ── Accountability ─────────────────────────────────────────────────────────────
+// Accountability
 async function loadAccountability() {
   const today = new Date().toISOString().split('T')[0];
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
@@ -984,7 +986,7 @@ async function loadAccountability() {
     issues.slice(0, 50).map(i => `<tr><td><code>${i.case_id}</code></td><td>${i.client}</td><td>${i.counsellor}</td><td style="color:#8C0303;">${i.issue}</td></tr>`).join('');
 }
 
-// ── Audit ─────────────────────────────────────────────────────────────────────
+// Audit
 async function loadAudit() {
   const { data } = await db.from('session_audit_log').select('*').order('changed_at', { ascending: false }).limit(200);
   const tbody = document.getElementById('auditBody');
@@ -1003,7 +1005,7 @@ async function loadAudit() {
   }).join('');
 }
 
-// ── Export ────────────────────────────────────────────────────────────────────
+// Export
 async function exportData(type) {
   const statusEl = document.getElementById('exportStatus');
   statusEl.textContent = 'Preparing…';
@@ -1053,6 +1055,112 @@ window.onload = async function() {
     const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
     if (profile?.role === 'admin') {
       currentUser = session.user; currentProfile = profile;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('userBadge').textContent = profile.full_name + ' (Supervisor)';
+      await init();
+    }
+  }
+};
+
+// Group Analytics
+async function loadGroupAnalytics() {
+  const period = document.getElementById('grpPeriod').value;
+  const now = new Date();
+  let fromDate = null;
+  if (period === 'month') fromDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  else if (period === 'quarter') { const q = Math.floor(now.getMonth()/3); fromDate = new Date(now.getFullYear(), q*3, 1).toISOString().split('T')[0]; }
+  else if (period === 'year') fromDate = `${now.getFullYear()}-01-01`;
+  else fromDate = '2024-08-01';
+
+  let q = db.from('sessions').select('*').eq('session_type','Group');
+  if (fromDate) q = q.gte('session_date', fromDate);
+  const { data: sessions, error } = await q;
+
+  if (error || !sessions || !sessions.length) {
+    document.getElementById('grpDetailBody').innerHTML = '<tr><td colspan="10" class="loading">No group sessions found for this period.</td></tr>';
+    ['gs-sessions','gs-pax','gs-better','gs-helpful','gs-recommend','gs-cw'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = '0'; });
+    return;
+  }
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const totalPax = sessions.reduce((a,s) => a+(s.group_participants||0), 0);
+  const totalBetter = sessions.reduce((a,s) => a+(s.post_feel_better||0), 0);
+  const totalPostPax = sessions.reduce((a,s) => a+(s.post_feel_better||0)+(s.post_feel_same||0)+(s.post_feel_worse||0), 0);
+  const totalHelpful = sessions.reduce((a,s) => a+(s.post_helpful_very||0)+(s.post_helpful_somewhat||0), 0);
+  const totalHelpPax = sessions.reduce((a,s) => a+(s.post_helpful_very||0)+(s.post_helpful_somewhat||0)+(s.post_helpful_not||0), 0);
+  const totalRec = sessions.reduce((a,s) => a+(s.post_recommend_yes||0), 0);
+  const totalRecPax = sessions.reduce((a,s) => a+(s.post_recommend_yes||0)+(s.post_recommend_no||0), 0);
+  const cwRef = sessions.filter(s => s.group_cw_referral).length;
+
+  set('gs-sessions', sessions.length);
+  set('gs-pax', totalPax || sessions.length + ' sessions');
+  set('gs-better', totalPostPax ? Math.round(totalBetter/totalPostPax*100)+'%' : '—');
+  set('gs-helpful', totalHelpPax ? Math.round(totalHelpful/totalHelpPax*100)+'%' : '—');
+  set('gs-recommend', totalRecPax ? Math.round(totalRec/totalRecPax*100)+'%' : '—');
+  set('gs-cw', cwRef);
+
+  // Mood charts
+  const preMoods = {
+    'Happy 😀': sessions.reduce((a,s)=>a+(s.pre_mood_happy||0),0),
+    'Calm 😐': sessions.reduce((a,s)=>a+(s.pre_mood_calm||0),0),
+    'Sad 😟': sessions.reduce((a,s)=>a+(s.pre_mood_sad||0),0),
+    'Worried 😕': sessions.reduce((a,s)=>a+(s.pre_mood_worried||0),0),
+  };
+  const postMoods = {
+    'Better 😊': sessions.reduce((a,s)=>a+(s.post_feel_better||0),0),
+    'Same 😐': sessions.reduce((a,s)=>a+(s.post_feel_same||0),0),
+    'Worse 😟': sessions.reduce((a,s)=>a+(s.post_feel_worse||0),0),
+  };
+  destroyChart('chartGrpMood');
+  if (document.getElementById('chartGrpMood')) {
+    charts['chartGrpMood'] = new Chart(document.getElementById('chartGrpMood'), {
+      type:'bar', data:{ labels:Object.keys(preMoods), datasets:[{ data:Object.values(preMoods), backgroundColor:['#4CAF5066','#FF980066','#8C030366','#FFCC0066'], borderColor:['#4CAF50','#FF9800','#8C0303','#FFCC00'], borderWidth:1 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{precision:0},title:{display:true,text:'Participants'}}} }
+    });
+  }
+  destroyChart('chartGrpPost');
+  if (document.getElementById('chartGrpPost')) {
+    charts['chartGrpPost'] = new Chart(document.getElementById('chartGrpPost'), {
+      type:'doughnut', data:{ labels:Object.keys(postMoods), datasets:[{ data:Object.values(postMoods), backgroundColor:['#2D7A4F','#FFCC00','#8C0303'] }] },
+      options:{ responsive:true, maintainAspectRatio:false }
+    });
+  }
+
+  const helpful = { 'Talking 🗣':sessions.reduce((a,s)=>a+(s.post_helpful_talking||0),0), 'Drawing 🎨':sessions.reduce((a,s)=>a+(s.post_helpful_drawing||0),0), 'Writing ✍':sessions.reduce((a,s)=>a+(s.post_helpful_writing||0),0), 'Relaxing 🧘':sessions.reduce((a,s)=>a+(s.post_helpful_relaxing||0),0), 'None':sessions.reduce((a,s)=>a+(s.post_helpful_none||0),0) };
+  destroyChart('chartGrpHelpful');
+  if (document.getElementById('chartGrpHelpful')) {
+    charts['chartGrpHelpful'] = new Chart(document.getElementById('chartGrpHelpful'), {
+      type:'bar', data:{ labels:Object.keys(helpful), datasets:[{ data:Object.values(helpful), backgroundColor:['#2D7A4F','#8C0303','#FFCC00','#4A6741','#999'] }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{precision:0}}} }
+    });
+  }
+
+  const pre = { 'Appetite loss':sessions.reduce((a,s)=>a+(s.pre_appetite_yes||0),0), 'Poor sleep ≤5h':sessions.reduce((a,s)=>a+(s.pre_sleep_under5||0),0), 'Affected by incident':sessions.reduce((a,s)=>a+(s.pre_affected_yes||0),0) };
+  destroyChart('chartGrpPre');
+  if (document.getElementById('chartGrpPre')) {
+    charts['chartGrpPre'] = new Chart(document.getElementById('chartGrpPre'), {
+      type:'bar', data:{ labels:Object.keys(pre), datasets:[{ data:Object.values(pre), backgroundColor:'#8C030366', borderColor:'#8C0303', borderWidth:1 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{precision:0}}} }
+    });
+  }
+
+  // Detail table
+  const grpClients = {};
+  allClients.filter(c=>c.case_type==='Group').forEach(c=>{ grpClients[c.case_id]=c; });
+  const tbody = document.getElementById('grpDetailBody');
+  if (tbody) tbody.innerHTML = sessions.sort((a,b)=>b.session_date>a.session_date?1:-1).map(s => {
+    const pax = s.group_participants||0;
+    const preSW = (s.pre_mood_sad||0)+(s.pre_mood_worried||0);
+    const postTotal = (s.post_feel_better||0)+(s.post_feel_same||0)+(s.post_feel_worse||0);
+    const betterPct = postTotal ? Math.round((s.post_feel_better||0)/postTotal*100)+'%' : '—';
+    const helpTotal = (s.post_helpful_very||0)+(s.post_helpful_somewhat||0)+(s.post_helpful_not||0);
+    const helpPct = helpTotal ? Math.round(((s.post_helpful_very||0)+(s.post_helpful_somewhat||0))/helpTotal*100)+'%' : '—';
+    const c = grpClients[s.case_id];
+    return `<tr><td>${s.session_date||'—'}</td><td><code>${s.case_id}</code></td><td>${c?.name||'—'}</td><td>${s.group_topic||'—'}</td><td style="text-align:center">${pax}</td><td>${s.group_language_mode||s.session_mode||'—'}</td><td style="text-align:center">${preSW}</td><td style="text-align:center">${betterPct}</td><td style="text-align:center">${helpPct}</td><td>${s.group_cw_referral?'<span class="badge badge-red">Yes</span>':'No'}</td></tr>`;
+  }).join('');
+}
+
+// Management Report
 async function loadMgmtReport() {
   const month = parseInt(document.getElementById('mgmtMonth').value);
   const year = 2026;
@@ -1219,13 +1327,18 @@ async function exportMgmtReport() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download = `HS_PCT_Report_${monthNames[month]}2026.csv`; a.click();
 }
-
+// Auto-restore session on page reload─
+db.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session && !currentUser) {
+    const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+    if (profile && profile.role === 'admin') {
+      currentUser = session.user; currentProfile = profile;
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('userBadge').textContent = profile.full_name + ' (Supervisor)';
       await init();
     }
   }
-};
+});
 </script>
 </body>
 </html>
